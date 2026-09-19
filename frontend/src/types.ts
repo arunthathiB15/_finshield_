@@ -1,3 +1,12 @@
+export type TabType =
+  | "overview"
+  | "strategy-lab"
+  | "reliability-analysis"
+  | "risk-and-regimes"
+  | "cost-sensitivity";
+
+export type ThemeMode = "dark" | "light";
+
 export type AssetSummary = {
   symbol: string;
   name: string;
@@ -35,8 +44,8 @@ export type AssetSeries = {
 
 export type BacktestRequest = {
   symbol: string;
-  strategy: "sma_crossover";
-  params: { fast_window: number; slow_window: number };
+  strategy: string;
+  params: { fast_window: number; slow_window: number; [key: string]: unknown };
   capital: number;
   cost: number;
   slippage: number;
@@ -82,7 +91,7 @@ export type TradeEvent = {
 export type BacktestResponse = {
   symbol: string;
   strategy: string;
-  parameters: { fast_window: number; slow_window: number };
+  parameters: { fast_window: number; slow_window: number; [key: string]: unknown };
   capital: number;
   transaction_cost: number;
   slippage: number;
@@ -158,7 +167,7 @@ export type TrustScore = {
 export type AnalysisResponse = {
   symbol: string;
   strategy: string;
-  parameters: { fast_window: number; slow_window: number };
+  parameters: { fast_window: number; slow_window: number; [key: string]: unknown };
   periods_per_year: number;
   metrics: BacktestMetrics;
   benchmark_metrics: BacktestMetrics;

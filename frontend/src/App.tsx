@@ -1,120 +1,169 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getAssets, runBacktest, runAnalysis, explainAnalysis } from "./api/client";
+import { Header } from "./components/Header";
+import { Navigation } from "./components/Navigation";
+import { OverviewTab } from "./components/OverviewTab";
+import { StrategyLabTab } from "./components/StrategyLabTab";
+import { ReliabilityTab } from "./components/ReliabilityTab";
+import { ReasoningTab } from "./components/ReasoningTab";
+import { CostSensitivityTab } from "./components/CostSensitivityTab";
+import { DEFAULT_ASSETS, type AssetTelemetry } from "./data/mockData";
+import type { TabType, ThemeMode, BacktestRequest, AnalysisRequest, ExplanationRequest } from "./types";
 
-import { getAssets } from "./api/client";
-import { PriceChart } from "./components/PriceChart";
-import { StrategyLab } from "./components/StrategyLab";
-import { AssetSelector } from "./components/AssetSelector";
-import { useAssetSeries } from "./hooks/useAssetSeries";
-
-function percent(value: number): string {
-  return `${(value * 100).toFixed(2)}%`;
-}
-
-function money(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
-}
+const TAB_TITLES: Record<TabType, string> = {
+  "overview": "Overview",
+  "strategy-lab": "Strategy Lab",
+  "reliability-analysis": "Reliability Analysis",
+  "risk-and-regimes": "Regimes & Reasoning",
+  "cost-sensitivity": "Cost Sensitivity",
+};
 
 export default function App() {
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [symbol, setSymbol] = useState<string>("GC=F");
+
+  // Sync html class for dark / light liquid glass theme
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.classList.remove("light");
+    } else {
+      root.classList.add("light");
+      root.classList.remove("dark");
+    }
+  }, [theme]);
+
+  // Query assets from backend (with graceful offline fallback)
   const assetsQuery = useQuery({
     queryKey: ["assets"],
     queryFn: getAssets,
     staleTime: 60_000,
+    retry: 1,
   });
-  const [symbol, setSymbol] = useState("NVDA");
-  useEffect(() => {
-    const availableAssets = assetsQuery.data ?? [];
-    if (!availableAssets.length) return;
-    setSymbol((currentSymbol) =>
-      availableAssets.some((asset) => asset.symbol === currentSymbol)
-        ? currentSymbol
-        : availableAssets[0].symbol,
-    );
-  }, [assetsQuery.data]);
-  const seriesQuery = useAssetSeries(symbol);
-  const selectedAsset = assetsQuery.data?.find((asset) => asset.symbol === symbol);
-  const chartData = useMemo(() => seriesQuery.data?.data.slice(-365) ?? [], [seriesQuery.data]);
 
-  if (assetsQuery.isLoading) {
-    return <main className="page-state">Loading market universe…</main>;
-  }
+  const availableTickers = Object.keys(DEFAULT_ASSETS);
+  const activeAssetData: AssetTelemetry = DEFAULT_ASSETS[symbol] || DEFAULT_ASSETS["GC=F"];
 
-  if (assetsQuery.isError) {
-    return (
-      <main className="page-state error">
-        <div>
-          <p>API unavailable. Start FastAPI on port 8000.</p>
-          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
-            Retry connection
-          </button>
-        </div>
-      </main>
-    );
-  }
+  // Backend mutations for live calculations
+  const backtestMutation = useMutation({
+    mutationFn: runBacktest,
+  });
 
-  if (assetsQuery.data?.length === 0) {
-    return (
-      <main className="page-state error">
-        <div>
-          <p>No market assets were loaded by the backend.</p>
-          <p className="muted">Restart FastAPI from the `_finshield_` repository folder, then retry.</p>
-          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
-            Retry asset loading
-          </button>
-        </div>
-      </main>
-    );
-  }
+  const analysisMutation = useMutation({
+    mutationFn: runAnalysis,
+  });
+
+  const explanationMutation = useMutation({
+    mutationFn: explainAnalysis,
+  });
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const handleRunBackendBacktest = (params: {
+    capital: number;
+    slippageBps: number;
+    fastWindow: number;
+    slowWindow: number;
+  }) => {
+    const payload: BacktestRequest = {
+      symbol,
+      strategy: "sma_crossover",
+      params: { fast_window: params.fastWindow, slow_window: params.slowWindow },
+      capital: params.capital,
+      cost: 0.0005,
+      slippage: params.slippageBps / 10_000,
+      period: { start: null, end: null },
+    };
+    backtestMutation.mutate(payload, {
+      onSuccess: () => {
+        const analysisPayload: AnalysisRequest = { ...payload, train_fraction: 0.7 };
+        analysisMutation.mutate(analysisPayload);
+      },
+    });
+  };
+
+  const handleExplainBackend = (question: string) => {
+    if (analysisMutation.data) {
+      const expPayload: ExplanationRequest = {
+        analysis: analysisMutation.data,
+        question: question.trim() || undefined,
+      };
+      explanationMutation.mutate(expPayload);
+    }
+  };
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div>
-          <div className="eyebrow">QUANTITATIVE INTELLIGENCE PLATFORM</div>
-          <h1>Finshield</h1>
-          <p>Don&apos;t just backtest. Stress-test.</p>
-        </div>
-        <div className="api-status"><span /> API connected</div>
-      </header>
+    <div
+      className={`min-h-screen flex flex-col transition-colors duration-200 ${
+        theme === "dark" ? "bg-[#0f131d] text-[#dfe2f1]" : "bg-[#FFFFFF] text-[#0F172A]"
+      }`}
+    >
+      {/* Institutional Header */}
+      <Header
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        activeAsset={symbol}
+        onSelectAsset={setSymbol}
+        availableAssets={availableTickers.map((t) => ({
+          symbol: t,
+          name: DEFAULT_ASSETS[t]?.name || t,
+        }))}
+        currentTabName={TAB_TITLES[activeTab]}
+        isNominal={!assetsQuery.isError}
+        onRefresh={() => assetsQuery.refetch()}
+      />
 
-      <section className="hero-panel">
-        <div>
-          <div className="eyebrow">ASSET INTELLIGENCE</div>
-          <h2>Understand the market before testing the strategy.</h2>
-          <p className="muted">
-            Seed data is loaded locally into DuckDB, so this screen remains usable without a live network call.
-          </p>
-        </div>
-        <AssetSelector
-          assets={assetsQuery.data ?? []}
-          value={symbol}
-          onChange={setSymbol}
-          id="overview-asset-selector"
-          disabled={assetsQuery.isFetching}
-        />
-      </section>
+      {/* Main Terminal View Space */}
+      <main className="flex-1 w-full pt-28 pb-24 px-3 sm:px-4 flex flex-col justify-start">
+        {activeTab === "overview" && (
+          <OverviewTab
+            asset={activeAssetData}
+            availableTickers={availableTickers}
+            selectedTicker={symbol}
+            onSelectTicker={setSymbol}
+            theme={theme}
+          />
+        )}
 
-      {selectedAsset && (
-        <section className="metric-grid">
-          <article className="metric-card"><span>Last close</span><strong>{money(selectedAsset.last_close)}</strong><small>{selectedAsset.end_date}</small></article>
-          <article className="metric-card"><span>Full-period return</span><strong className={selectedAsset.total_return >= 0 ? "positive" : "negative"}>{percent(selectedAsset.total_return)}</strong><small>Close-to-close</small></article>
-          <article className="metric-card"><span>Annualized volatility</span><strong>{percent(selectedAsset.annualized_volatility)}</strong><small>Daily returns × √{selectedAsset.periods_per_year}</small></article>
-          <article className="metric-card"><span>Data quality</span><strong>{selectedAsset.quality_status.toUpperCase()}</strong><small>{selectedAsset.rows.toLocaleString()} rows · {selectedAsset.missing_days} expected sessions missing</small></article>
-        </section>
-      )}
+        {activeTab === "strategy-lab" && (
+          <StrategyLabTab
+            asset={activeAssetData}
+            availableTickers={availableTickers}
+            selectedTicker={symbol}
+            onSelectTicker={setSymbol}
+            theme={theme}
+            onRunBackendBacktest={handleRunBackendBacktest}
+          />
+        )}
 
-      <section className="panel chart-panel">
-        <div className="panel-heading">
-          <div><h3>{symbol} price and trend</h3><p className="muted">Last 365 available sessions · SMA and EMA use only information available at each date.</p></div>
-          {seriesQuery.isFetching && <span className="loading-label">Refreshing…</span>}
-        </div>
-        {seriesQuery.isError && <p className="error">Could not load the selected asset series.</p>}
-        {chartData.length > 0 && <PriceChart data={chartData} />}
-      </section>
+        {activeTab === "reliability-analysis" && (
+          <ReliabilityTab asset={activeAssetData} theme={theme} />
+        )}
 
-      <StrategyLab assets={assetsQuery.data ?? []} symbol={symbol} onSymbolChange={setSymbol} />
+        {activeTab === "risk-and-regimes" && (
+          <ReasoningTab
+            asset={activeAssetData}
+            theme={theme}
+            onExplainBackend={handleExplainBackend}
+          />
+        )}
 
-      <footer>For research and educational analysis. Historical backtest results do not guarantee future performance.</footer>
-    </main>
+        {activeTab === "cost-sensitivity" && (
+          <CostSensitivityTab
+            asset={activeAssetData}
+            theme={theme}
+            onNavigateTab={setActiveTab}
+          />
+        )}
+      </main>
+
+      {/* Fixed Bottom Navigation */}
+      <Navigation activeTab={activeTab} onSelectTab={setActiveTab} theme={theme} />
+    </div>
   );
 }
