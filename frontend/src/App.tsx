@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { getAssets } from "./api/client";
 import { PriceChart } from "./components/PriceChart";
 import { StrategyLab } from "./components/StrategyLab";
+import { AssetSelector } from "./components/AssetSelector";
 import { useAssetSeries } from "./hooks/useAssetSeries";
 
 function percent(value: number): string {
@@ -21,6 +22,15 @@ export default function App() {
     staleTime: 60_000,
   });
   const [symbol, setSymbol] = useState("NVDA");
+  useEffect(() => {
+    const availableAssets = assetsQuery.data ?? [];
+    if (!availableAssets.length) return;
+    setSymbol((currentSymbol) =>
+      availableAssets.some((asset) => asset.symbol === currentSymbol)
+        ? currentSymbol
+        : availableAssets[0].symbol,
+    );
+  }, [assetsQuery.data]);
   const seriesQuery = useAssetSeries(symbol);
   const selectedAsset = assetsQuery.data?.find((asset) => asset.symbol === symbol);
   const chartData = useMemo(() => seriesQuery.data?.data.slice(-365) ?? [], [seriesQuery.data]);
@@ -52,14 +62,13 @@ export default function App() {
             Seed data is loaded locally into DuckDB, so this screen remains usable without a live network call.
           </p>
         </div>
-        <label className="asset-picker">
-          <span>Asset</span>
-          <select value={symbol} onChange={(event) => setSymbol(event.target.value)}>
-            {assetsQuery.data?.map((asset) => (
-              <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · {asset.name}</option>
-            ))}
-          </select>
-        </label>
+        <AssetSelector
+          assets={assetsQuery.data ?? []}
+          value={symbol}
+          onChange={setSymbol}
+          id="overview-asset-selector"
+          disabled={assetsQuery.isFetching}
+        />
       </section>
 
       {selectedAsset && (

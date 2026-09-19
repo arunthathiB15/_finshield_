@@ -44,8 +44,12 @@ class MarketDataStore:
             self.connection.unregister("validated_frame")
 
     def symbols(self) -> list[str]:
-        rows = self.connection.execute("SELECT DISTINCT symbol FROM ohlcv ORDER BY symbol").fetchall()
-        return [row[0] for row in rows]
+        rows = self.connection.execute("SELECT DISTINCT symbol FROM ohlcv").fetchall()
+        display_order = {"GC=F": 0, "BTC-USD": 1, "NVDA": 2}
+        return sorted(
+            (row[0] for row in rows),
+            key=lambda symbol: (display_order.get(symbol, len(display_order)), symbol),
+        )
 
     def get_frame(self, symbol: str, start: str | None = None, end: str | None = None) -> pd.DataFrame:
         query = "SELECT * FROM ohlcv WHERE symbol = ?"

@@ -7,5 +7,6 @@ export function useAssetSeries(symbol: string) {
     queryKey: ["asset-series", symbol],
     queryFn: () => getAssetSeries(symbol),
     staleTime: 60_000,
+    enabled: Boolean(symbol),
   });
 }

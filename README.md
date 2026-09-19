@@ -72,7 +72,7 @@ the compounded gross result minus the compounded result after costs.
 - Step 3: committed SMA crossover backtest lab with costs, slippage, benchmark, equity curve, trade log, metrics, tests, and CI.
 - Step 4: deterministic reliability analysis described above.
 - Step 5: server-side Featherless explanation endpoint, safe deterministic fallback, and frontend explanation panel.
-- Step 6: final documentation, demo rehearsal, and submission verification.
+- Step 6: stable asset selection, final documentation, demo rehearsal, and submission verification.
 
 ## Repository layout
 
@@ -104,7 +104,7 @@ cp .env.example .env
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
-uvicorn backend.app.main:app --reload --port 8000
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
 On Windows PowerShell, use the equivalent commands:
@@ -114,7 +114,7 @@ Copy-Item .env.example .env
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r backend\requirements.txt
-python -m uvicorn backend.app.main:app --reload --port 8000
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
 To enable the Featherless language layer, set these values in the uncommitted
@@ -138,7 +138,23 @@ npm install
 npm run dev
 ```
 
+Install dependencies only after cloning or changing dependency files. Start one
+FastAPI process at a time; a second process can lock the local DuckDB file.
+
 The API health endpoint will be available at `http://localhost:8000/health`.
+
+## Step 6 demo checklist
+
+1. Start FastAPI once and wait for `Application startup complete`.
+2. Start Vite in a second terminal and open `http://localhost:5173`.
+3. Confirm the Asset selector contains Gold Futures (`GC=F`), Bitcoin
+   (`BTC-USD`), and NVIDIA (`NVDA`).
+4. Change the asset in either selector and confirm the price chart and summary
+   cards update to the same asset.
+5. Run a backtest, change the asset, and confirm the previous result clears
+   before running the new asset.
+6. Run the explanation panel and confirm it reports either Featherless or the
+   deterministic fallback source.
 
 ## Testing
 

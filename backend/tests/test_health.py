@@ -14,6 +14,7 @@ def test_assets_and_nvda_series() -> None:
         assets = client.get("/api/assets")
         assert assets.status_code == 200
         assert {asset["symbol"] for asset in assets.json()} == {"BTC-USD", "GC=F", "NVDA"}
+        assert [asset["symbol"] for asset in assets.json()] == ["GC=F", "BTC-USD", "NVDA"]
 
         series = client.get("/api/assets/NVDA/series")
         assert series.status_code == 200

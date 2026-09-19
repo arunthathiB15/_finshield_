@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { runAnalysis, runBacktest } from "../api/client";
 import type {
@@ -10,6 +10,7 @@ import type {
   BacktestResponse,
 } from "../types";
 import { AnalysisPanel } from "./AnalysisPanel";
+import { AssetSelector } from "./AssetSelector";
 import { EquityChart } from "./EquityChart";
 import { ExplanationPanel } from "./ExplanationPanel";
 
@@ -41,9 +42,18 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
   const [end, setEnd] = useState("");
   const mutation = useMutation<BacktestResponse, Error, BacktestRequest>({ mutationFn: runBacktest });
   const analysisMutation = useMutation<AnalysisResponse, Error, AnalysisRequest>({ mutationFn: runAnalysis });
+  const previousSymbol = useRef(symbol);
+
+  useEffect(() => {
+    if (previousSymbol.current === symbol) return;
+    previousSymbol.current = symbol;
+    mutation.reset();
+    analysisMutation.reset();
+  }, [symbol]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!symbol) return;
     const payload: BacktestRequest = {
       symbol,
       strategy: "sma_crossover",
@@ -74,7 +84,7 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
       </div>
 
       <form className="form-grid" onSubmit={submit}>
-        <label className="field"><span>Asset</span><select value={symbol} onChange={(event) => onSymbolChange(event.target.value)}>{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol} · {asset.name}</option>)}</select></label>
+        <AssetSelector assets={assets} value={symbol} onChange={onSymbolChange} id="strategy-asset-selector" />
         <label className="field"><span>Strategy</span><select value="sma_crossover" disabled><option value="sma_crossover">SMA crossover</option></select></label>
         <label className="field"><span>Initial capital</span><input type="number" min="1" step="1000" value={capital} onChange={(event) => setCapital(event.target.value)} /></label>
         <label className="field"><span>Transaction cost (bps)</span><input type="number" min="0" step="1" value={costBps} onChange={(event) => setCostBps(event.target.value)} /></label>
@@ -83,7 +93,7 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
         <label className="field"><span>Slow SMA days</span><input type="number" min="3" value={slowWindow} onChange={(event) => setSlowWindow(event.target.value)} /></label>
         <label className="field"><span>Start date (optional)</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} /></label>
         <label className="field"><span>End date (optional)</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
-        <button className="primary-button" type="submit" disabled={mutation.isPending || analysisMutation.isPending}>Run backtest</button>
+        <button className="primary-button" type="submit" disabled={!symbol || mutation.isPending || analysisMutation.isPending}>Run backtest</button>
       </form>
 
       {mutation.isError && <p className="error">Backtest failed: {mutation.error.message}</p>}
