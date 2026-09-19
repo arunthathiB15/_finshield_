@@ -24,6 +24,7 @@ assets into `data/quantguard.duckdb` during API startup. It exposes:
 GET /health
 GET /api/assets
 GET /api/assets/{symbol}/series?start=YYYY-MM-DD&end=YYYY-MM-DD
+POST /api/backtest
 ```
 
 The series endpoint returns OHLCV plus causal 20-day SMA, EMA, annualized
@@ -32,6 +33,19 @@ render the Asset Intelligence chart. A missing exchange session is reported as
 a data-quality gap; prices are not forward-filled because that would invent a
 trade. Yahoo Finance is the online ingestion path and Stooq is the fallback;
 the committed CSVs make the demo independent of both services.
+
+The Strategy Lab currently supports a long/flat SMA crossover. It accepts
+initial capital, fast/slow windows, transaction cost, slippage, and an optional
+date range. The backtest compares the strategy with buy-and-hold on the same
+asset and same cost assumptions. A signal observed on date `t` is applied to
+returns on date `t+1`; this one-bar shift is the core protection against
+look-ahead bias.
+
+The first metrics are deliberately transparent: total return compounds daily
+returns; CAGR annualises that compounded result; Sharpe is average return per
+unit of volatility; Sortino replaces total volatility with downside deviation;
+maximum drawdown is the largest peak-to-trough equity fall; and cost drag is
+the compounded gross result minus the compounded result after costs.
 
 ## Repository layout
 

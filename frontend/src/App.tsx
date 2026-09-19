@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { getAssets } from "./api/client";
 import { PriceChart } from "./components/PriceChart";
+import { StrategyLab } from "./components/StrategyLab";
 import { useAssetSeries } from "./hooks/useAssetSeries";
 
 function percent(value: number): string {
@@ -78,6 +79,8 @@ export default function App() {
         {seriesQuery.isError && <p className="error">Could not load the selected asset series.</p>}
         {chartData.length > 0 && <PriceChart data={chartData} />}
       </section>
+
+      <StrategyLab assets={assetsQuery.data ?? []} symbol={symbol} onSymbolChange={setSymbol} />
 
       <footer>For research and educational analysis. Historical backtest results do not guarantee future performance.</footer>
     </main>

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.api.routes.assets import router as assets_router
+from backend.app.api.routes.backtest import router as backtest_router
 from backend.app.core.config import settings
 from backend.app.data.loader import load_seed_data
 from backend.app.data.store import MarketDataStore
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(assets_router)
+app.include_router(backtest_router)
 
 
 @app.get("/health")
