@@ -74,7 +74,7 @@ export function ExplanationPanel({ analysis, theme = "light" }: ExplanationPanel
             placeholder="Ask a question about drawdowns, slippage impact, regime breakdown, or the trust score..."
             className={`w-full p-3 rounded-xl text-xs sm:text-sm font-body-md transition-all resize-none ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+                ? "bg-background text-on-surface border border-outline-variant focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
                 : "bg-white/90 text-text-obsidian border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs"
             }`}
           />
@@ -82,7 +82,7 @@ export function ExplanationPanel({ analysis, theme = "light" }: ExplanationPanel
 
         <div className="flex justify-end">
           <button
-            className="liquid-button px-5 py-2.5 rounded-xl font-headline-sm text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-primary-container dark:to-primary-fixed dark:text-on-primary-container shadow-md cursor-pointer disabled:opacity-50"
+            className="liquid-button px-5 py-2.5 rounded-xl font-headline-sm text-xs sm:text-sm font-bold bg-primary-container text-on-primary-container cursor-pointer disabled:opacity-50"
             type="submit"
             disabled={mutation.isPending}
           >
@@ -101,7 +101,7 @@ export function ExplanationPanel({ analysis, theme = "light" }: ExplanationPanel
         <div
           className={`dynamic-subcard p-4 sm:p-5 flex flex-col gap-2.5 ${
             isDark
-              ? "bg-[#102034] border border-primary-container/30"
+              ? "bg-surface-container border border-primary-container/30"
               : "bg-blue-50/80 border border-blue-200 shadow-sm"
           }`}
         >

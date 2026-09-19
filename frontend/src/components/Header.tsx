@@ -3,14 +3,12 @@ import type { ThemeMode } from "../types";
 
 type HeaderProps = {
   theme: ThemeMode;
-  onToggleTheme: () => void;
   isApiConnected: boolean;
   onRefresh?: () => void;
 };
 
 export const Header: React.FC<HeaderProps> = ({
   theme,
-  onToggleTheme,
   isApiConnected,
   onRefresh,
 }) => {
@@ -25,10 +23,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 pt-safe transition-all duration-200 ${
+      className={`finshield-header fixed top-0 inset-x-0 z-50 pt-safe transition-all duration-200 ${
         isDark
-          ? "bg-[#0a0e18]/85 backdrop-blur-xl border-b border-white/10 shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
-          : "bg-white/80 backdrop-blur-2xl border-b border-slate-200/80 shadow-[0_4px_24px_rgba(15,23,42,0.04)]"
+          ? "bg-background border-b border-outline-variant"
+          : "bg-background border-b border-outline-variant"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 py-2.5 flex items-center justify-between gap-4">
@@ -43,30 +41,30 @@ export const Header: React.FC<HeaderProps> = ({
             <g id="shield-icon">
               <path
                 d="M20 4L7 9V19C7 27.5 12.5 35.3 20 37.5C27.5 35.3 33 27.5 33 19V9L20 4Z"
-                stroke={isDark ? "#00F0FF" : "#0066ff"}
+                stroke="#647D88"
                 strokeWidth="2.5"
                 strokeLinejoin="round"
-                fill={isDark ? "rgba(0, 240, 255, 0.08)" : "rgba(0, 102, 255, 0.08)"}
+                fill="rgba(100, 125, 136, 0.12)"
               />
               <path
                 d="M14 20L18.5 24.5L26 15"
-                stroke={isDark ? "#00F0FF" : "#0066ff"}
+                stroke="#647D88"
                 strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <circle cx="20" cy="8" r="1.5" fill="#FF2A85" />
+              <circle cx="20" cy="8" r="1.5" fill="#9D8750" />
             </g>
             <text
               x="44"
               y="26"
-              fill={isDark ? "#FFFFFF" : "#0F172A"}
+              fill="#E6E9E8"
               fontFamily="Inter, -apple-system, sans-serif"
               fontWeight="700"
               fontSize="20"
               letterSpacing="-0.02em"
             >
-              Fin<tspan fill={isDark ? "#00F0FF" : "#0066ff"}>Shield</tspan>
+              Fin<tspan fill="#647D88">Shield</tspan>
             </text>
             <rect
               x="124"
@@ -74,14 +72,14 @@ export const Header: React.FC<HeaderProps> = ({
               width="28"
               height="13"
               rx="3"
-              fill={isDark ? "rgba(0, 240, 255, 0.15)" : "rgba(0, 102, 255, 0.12)"}
-              stroke={isDark ? "rgba(0, 240, 255, 0.4)" : "rgba(0, 102, 255, 0.35)"}
+              fill="rgba(100, 125, 136, 0.18)"
+              stroke="rgba(100, 125, 136, 0.55)"
               strokeWidth="0.75"
             />
             <text
               x="128"
               y="23.5"
-              fill={isDark ? "#00F0FF" : "#0066ff"}
+              fill="#647D88"
               fontFamily="Inter, sans-serif"
               fontSize="8"
               fontWeight="600"
@@ -124,25 +122,6 @@ export const Header: React.FC<HeaderProps> = ({
               {isApiConnected ? "API Connected" : "Local Data Ready"}
             </span>
           </div>
-
-          {/* Theme Switcher */}
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`h-8 px-2.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
-              isDark
-                ? "bg-white/10 text-on-surface hover:bg-white/15 border border-white/10"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-            }`}
-            title={`Switch to ${isDark ? "Liquid Glass Light" : "Cyber Quant Dark"} mode`}
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              {isDark ? "light_mode" : "dark_mode"}
-            </span>
-            <span className="hidden md:inline font-code-sm text-[10px]">
-              {isDark ? "LIQUID GLASS" : "CYBER DARK"}
-            </span>
-          </button>
 
           {/* Refresh Button */}
           <button

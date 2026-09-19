@@ -59,7 +59,7 @@ export function AssetSelector({
           }}
           className={`w-full font-body-md text-sm py-2.5 px-3.5 rounded-xl appearance-none pr-9 font-semibold transition-all cursor-pointer ${
             isDark
-              ? "bg-[#0a0e18] text-on-surface border border-white/10 hover:border-primary-container/50 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
+              ? "bg-background text-on-surface border border-outline-variant hover:border-primary-container/50 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20"
               : "bg-white/90 text-text-obsidian border border-slate-200/90 hover:border-blue-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 shadow-xs"
           }`}
         >

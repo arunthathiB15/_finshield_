@@ -164,7 +164,7 @@ export function StrategyLab({
             disabled
             className={`w-full font-body-md text-sm py-2.5 px-3.5 rounded-xl font-semibold opacity-85 cursor-not-allowed ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           >
@@ -184,7 +184,7 @@ export function StrategyLab({
             onChange={(event) => setCapital(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -202,7 +202,7 @@ export function StrategyLab({
             onChange={(event) => setCostBps(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -220,7 +220,7 @@ export function StrategyLab({
             onChange={(event) => setSlippageBps(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -237,7 +237,7 @@ export function StrategyLab({
             onChange={(event) => setFastWindow(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -254,7 +254,7 @@ export function StrategyLab({
             onChange={(event) => setSlowWindow(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -270,7 +270,7 @@ export function StrategyLab({
             onChange={(event) => setStart(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -286,7 +286,7 @@ export function StrategyLab({
             onChange={(event) => setEnd(event.target.value)}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
-                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                ? "bg-background text-on-surface border border-outline-variant"
                 : "bg-white/90 text-text-obsidian border border-slate-200"
             }`}
           />
@@ -294,7 +294,7 @@ export function StrategyLab({
 
         <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-2">
           <button
-            className="liquid-button px-6 py-3 rounded-xl font-headline-sm text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-primary-container dark:to-primary-fixed dark:text-on-primary-container shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            className="liquid-button px-6 py-3 rounded-xl font-headline-sm text-sm font-bold bg-primary-container text-on-primary-container cursor-pointer disabled:opacity-50 flex items-center gap-2"
             type="submit"
             disabled={!symbol || mutation.isPending || analysisMutation.isPending}
           >

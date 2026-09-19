@@ -80,7 +80,7 @@ export function AnalysisPanel({ analysis, theme = "light" }: AnalysisPanelProps)
         <div
           className={`dynamic-subcard p-4 min-w-[220px] shrink-0 flex flex-col gap-1 border ${
             isDark
-              ? "bg-[#102034] border-primary-container/30 text-on-surface"
+              ? "bg-surface-container border-primary-container/30 text-on-surface"
               : "bg-blue-50/90 border-blue-200 text-text-obsidian"
           }`}
         >
@@ -166,24 +166,24 @@ export function AnalysisPanel({ analysis, theme = "light" }: AnalysisPanelProps)
           <div className="chart-shell h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={costData} margin={{ top: 10, right: 12, bottom: 8, left: 4 }}>
-                <CartesianGrid stroke={isDark ? "#243047" : "#e2e8f0"} strokeDasharray="3 3" />
+                <CartesianGrid stroke="#556168" strokeDasharray="3 3" />
                 <XAxis
                   dataKey="cost"
-                  stroke={isDark ? "#8c9ab5" : "#64748b"}
+                  stroke="#B7C0BF"
                   tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }}
                 />
                 <YAxis
-                  stroke={isDark ? "#8c9ab5" : "#64748b"}
+                  stroke="#B7C0BF"
                   tickFormatter={(val) => `${val}%`}
                   tick={{ fontSize: 10, fontFamily: "JetBrains Mono" }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: isDark ? "rgba(16, 24, 39, 0.95)" : "rgba(255, 255, 255, 0.95)",
-                    border: isDark ? "1px solid #2b3a55" : "1px solid rgba(226, 232, 240, 0.9)",
+                    background: "#354149",
+                    border: "1px solid #556168",
                     borderRadius: "10px",
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-                    color: isDark ? "#eef4ff" : "#0F172A",
+                    boxShadow: "none",
+                    color: "#E6E9E8",
                     fontSize: "11px",
                   }}
                   formatter={(val: number) => [`${val.toFixed(2)}%`, "Return"]}
@@ -191,8 +191,8 @@ export function AnalysisPanel({ analysis, theme = "light" }: AnalysisPanelProps)
                 <Line
                   type="monotone"
                   dataKey="return"
-                  stroke={isDark ? "#00f0ff" : "#0066ff"}
-                  dot={{ r: 3.5, fill: isDark ? "#00f0ff" : "#0066ff" }}
+                  stroke="#9D8750"
+                  dot={{ r: 3.5, fill: "#9D8750" }}
                   strokeWidth={2}
                 />
               </LineChart>
@@ -261,7 +261,7 @@ export function AnalysisPanel({ analysis, theme = "light" }: AnalysisPanelProps)
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 dark:from-primary-container dark:to-primary-fixed transition-all duration-500"
+                    className="trust-bar-fill h-full rounded-full transition-all duration-500"
                     style={{ width: `${component.score}%` }}
                   />
                 </div>

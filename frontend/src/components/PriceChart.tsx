@@ -33,37 +33,35 @@ function formatPrice(value: number): string {
 }
 
 export function PriceChart({ data, theme = "light" }: PriceChartProps) {
-  const isDark = theme === "dark";
-
   return (
     <div className="chart-shell">
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data} margin={{ top: 16, right: 20, bottom: 8, left: 12 }}>
           <CartesianGrid
-            stroke={isDark ? "#243047" : "#e2e8f0"}
+            stroke="#556168"
             strokeDasharray="3 3"
           />
           <XAxis
             dataKey="date"
             minTickGap={48}
-            stroke={isDark ? "#8c9ab5" : "#64748b"}
+            stroke="#B7C0BF"
             tickFormatter={formatDate}
             tick={{ fontSize: 11, fontFamily: "JetBrains Mono" }}
           />
           <YAxis
             yAxisId="price"
             domain={["auto", "auto"]}
-            stroke={isDark ? "#8c9ab5" : "#64748b"}
+            stroke="#B7C0BF"
             tickFormatter={formatPrice}
             tick={{ fontSize: 11, fontFamily: "JetBrains Mono" }}
           />
           <Tooltip
             contentStyle={{
-              background: isDark ? "rgba(16, 24, 39, 0.95)" : "rgba(255, 255, 255, 0.96)",
-              border: isDark ? "1px solid #2b3a55" : "1px solid rgba(226, 232, 240, 0.9)",
+              background: "#354149",
+              border: "1px solid #556168",
               borderRadius: "12px",
-              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-              color: isDark ? "#eef4ff" : "#0F172A",
+              boxShadow: "none",
+              color: "#E6E9E8",
               fontFamily: "Inter, sans-serif",
               fontSize: "12px",
             }}
@@ -82,7 +80,7 @@ export function PriceChart({ data, theme = "light" }: PriceChartProps) {
             type="monotone"
             dataKey="close"
             name="Close Price"
-            stroke={isDark ? "#00f0ff" : "#0066ff"}
+            stroke="#647D88"
             dot={false}
             strokeWidth={2.25}
           />
@@ -91,7 +89,7 @@ export function PriceChart({ data, theme = "light" }: PriceChartProps) {
             type="monotone"
             dataKey="sma_20"
             name="SMA 20"
-            stroke="#f59e0b"
+            stroke="#9D8750"
             dot={false}
             strokeWidth={1.5}
             connectNulls
@@ -101,7 +99,7 @@ export function PriceChart({ data, theme = "light" }: PriceChartProps) {
             type="monotone"
             dataKey="ema_20"
             name="EMA 20"
-            stroke="#8b5cf6"
+            stroke="#6E8A7A"
             dot={false}
             strokeWidth={1.5}
             connectNulls

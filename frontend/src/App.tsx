@@ -7,7 +7,6 @@ import { PriceChart } from "./components/PriceChart";
 import { StrategyLab } from "./components/StrategyLab";
 import { AssetSelector } from "./components/AssetSelector";
 import { useAssetSeries } from "./hooks/useAssetSeries";
-import { DEFAULT_ASSET_SUMMARIES, generateMockSeries } from "./data/mockData";
 import type { ThemeMode } from "./types";
 
 function percent(value: number): string {
@@ -19,19 +18,17 @@ function money(value: number): string {
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  // FinShield uses one restrained terminal palette. Keeping a single theme
+  // prevents the dashboard from switching to a second, unrelated visual system.
+  const theme: ThemeMode = "dark";
+  const isDark = theme === "dark";
   const [symbol, setSymbol] = useState("NVDA");
 
-  // Sync html class for dark / light liquid glass theme
+  // Keep the document theme class in sync with the fixed FinShield palette.
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    }
+    root.classList.add("dark");
+    root.classList.remove("light");
   }, [theme]);
 
   // Dynamic Cursor Tracking on Liquid Glass Boxes
@@ -53,7 +50,8 @@ export default function App() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // Fetch universe assets (with seamless fallback to cached local summaries)
+  // Fetch the universe from FastAPI. Never replace failed responses with
+  // hard-coded or generated market values.
   const assetsQuery = useQuery({
     queryKey: ["assets"],
     queryFn: getAssets,
@@ -61,12 +59,7 @@ export default function App() {
     retry: 1,
   });
 
-  const availableAssets = useMemo(() => {
-    if (assetsQuery.data && assetsQuery.data.length > 0) {
-      return assetsQuery.data;
-    }
-    return DEFAULT_ASSET_SUMMARIES;
-  }, [assetsQuery.data]);
+  const availableAssets = assetsQuery.data ?? [];
 
   useEffect(() => {
     if (!availableAssets.length) return;
@@ -78,27 +71,57 @@ export default function App() {
   }, [availableAssets]);
 
   const seriesQuery = useAssetSeries(symbol);
-  const selectedAsset = availableAssets.find((asset) => asset.symbol === symbol) || availableAssets[0];
+  const selectedAsset = availableAssets.find((asset) => asset.symbol === symbol);
 
   const chartData = useMemo(() => {
-    if (seriesQuery.data?.data && seriesQuery.data.data.length > 0) {
-      return seriesQuery.data.data.slice(-365);
-    }
-    return generateMockSeries(symbol);
+    return seriesQuery.data?.data.slice(-365) ?? [];
   }, [seriesQuery.data, symbol]);
 
-  const isDark = theme === "dark";
+  const latestPoint = seriesQuery.data?.data[seriesQuery.data.data.length - 1];
+  const firstPoint = seriesQuery.data?.data[0];
+  const displayClose = latestPoint?.close ?? selectedAsset?.last_close;
+  const displayDate = latestPoint?.date ?? selectedAsset?.end_date;
+  const displayReturn =
+    firstPoint && latestPoint
+      ? latestPoint.close / firstPoint.close - 1
+      : selectedAsset?.total_return;
+
+  if (assetsQuery.isLoading) {
+    return <main className="page-state">Loading validated market data…</main>;
+  }
+
+  if (assetsQuery.isError) {
+    return (
+      <main className="page-state error">
+        <div className="page-state-card">
+          <p>FastAPI is unavailable, so no market values are shown.</p>
+          <p className="muted">Start the backend on port 8000, then retry.</p>
+          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
+            Retry connection
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (!availableAssets.length) {
+    return (
+      <main className="page-state error">
+        <div className="page-state-card">
+          <p>No validated assets were returned by FastAPI.</p>
+          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
+            Retry asset loading
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div
-      className={`min-h-screen flex flex-col transition-colors duration-200 ${
-        isDark ? "bg-[#0a0e18] text-[#dfe2f1]" : "bg-[#FFFFFF] text-[#0F172A]"
-      }`}
-    >
+    <div className="finshield-root min-h-screen flex flex-col">
       {/* Institutional Specular Header */}
       <Header
         theme={theme}
-        onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         isApiConnected={!assetsQuery.isError}
         onRefresh={() => {
           assetsQuery.refetch();
@@ -142,9 +165,9 @@ export default function App() {
                 Last close
               </span>
               <strong className={`font-metric-lg text-xl sm:text-2xl font-bold my-1 ${isDark ? "text-on-surface" : "text-text-obsidian"}`}>
-                ${money(selectedAsset.last_close)}
+                {displayClose === undefined ? "—" : `$${money(displayClose)}`}
               </strong>
-              <small className="opacity-60 text-[11px] font-medium">{selectedAsset.end_date}</small>
+              <small className="opacity-60 text-[11px] font-medium">{displayDate}</small>
             </article>
 
             <article className="dynamic-glass-card p-4 sm:p-5 flex flex-col justify-between min-h-[110px]">
@@ -153,12 +176,12 @@ export default function App() {
               </span>
               <strong
                 className={`font-metric-lg text-xl sm:text-2xl font-bold my-1 ${
-                  selectedAsset.total_return >= 0
+                  (displayReturn ?? selectedAsset.total_return) >= 0
                     ? "text-emerald-600 dark:text-primary-container"
                     : "text-rose-500"
                 }`}
               >
-                {percent(selectedAsset.total_return)}
+                {percent(displayReturn ?? selectedAsset.total_return)}
               </strong>
               <small className="opacity-60 text-[11px] font-medium">Close-to-close</small>
             </article>
@@ -180,10 +203,10 @@ export default function App() {
                 Data quality
               </span>
               <strong className="font-metric-lg text-xl sm:text-2xl font-bold my-1 text-emerald-600 dark:text-primary-container uppercase">
-                {selectedAsset.quality_status}
+                {selectedAsset.quality_status === "ok" ? "OPTIMAL" : selectedAsset.quality_status.toUpperCase()}
               </strong>
               <small className="opacity-60 text-[11px] font-medium">
-                {selectedAsset.rows.toLocaleString()} rows · {selectedAsset.missing_days} missing sessions
+                {selectedAsset.rows.toLocaleString()} rows · {selectedAsset.missing_days} expected sessions missing
               </small>
             </article>
           </section>
@@ -211,7 +234,11 @@ export default function App() {
             )}
           </div>
 
-          {chartData.length > 0 && <PriceChart data={chartData} theme={theme} />}
+          {seriesQuery.isError && <p className="error-panel">Could not load the selected asset series from FastAPI.</p>}
+          {!seriesQuery.isError && chartData.length > 0 && <PriceChart data={chartData} theme={theme} />}
+          {!seriesQuery.isError && !seriesQuery.isFetching && chartData.length === 0 && (
+            <p className="empty-panel">No validated price observations were returned for {symbol}.</p>
+          )}
         </section>
 
         {/* Steps 3, 4 & 5: Strategy Lab, Results, Reliability Lab, and Plain-Language Explanation */}
