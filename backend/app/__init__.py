@@ -1,1 +1,1 @@
-"""QuantGuard backend application package."""
+"""Finshield backend application package."""

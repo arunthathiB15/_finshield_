@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    database_path: str = "data/quantguard.duckdb"
+    database_path: str = "data/Finshield.duckdb"
     seed_data_path: str = "data"
     featherless_api_key: str | None = None
     featherless_model: str | None = None

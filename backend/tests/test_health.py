@@ -7,7 +7,7 @@ from backend.app.main import app
 def test_health_endpoint() -> None:
     response = TestClient(app).get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "quantguard-api"}
+    assert response.json() == {"status": "ok", "service": "Finshield-api"}
 
 
 def test_runtime_data_paths_are_anchored_to_the_repository() -> None:

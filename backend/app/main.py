@@ -21,7 +21,7 @@ async def lifespan(application: FastAPI):
     store.close()
 
 app = FastAPI(
-    title="QuantGuard API",
+    title="Finshield API",
     description="Multi-asset quantitative intelligence and strategy stress-testing API.",
     version="0.1.0",
     lifespan=lifespan,
@@ -43,4 +43,4 @@ app.include_router(explanation_router)
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "quantguard-api"}
+    return {"status": "ok", "service": "Finshield-api"}

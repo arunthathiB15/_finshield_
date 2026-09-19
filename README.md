@@ -1,8 +1,8 @@
-# QuantGuard
+# Finshield
 
 **Don't just backtest. Stress-test.**
 
-QuantGuard is a production-shaped MVP for multi-asset quantitative research. It evaluates whether a strategy's historical result remains credible when parameters, transaction costs, testing periods, and market regimes change.
+Finshield is a production-shaped MVP for multi-asset quantitative research. It evaluates whether a strategy's historical result remains credible when parameters, transaction costs, testing periods, and market regimes change.
 
 ## Scope
 
@@ -18,7 +18,7 @@ QuantGuard is a production-shaped MVP for multi-asset quantitative research. It 
 ## Current API slice
 
 The current MVP slice loads the committed Yahoo Finance snapshots for all three
-assets into `data/quantguard.duckdb` during API startup. It exposes:
+assets into `data/Finshield.duckdb` during API startup. It exposes:
 
 ```text
 GET /health
@@ -77,7 +77,7 @@ the compounded gross result minus the compounded result after costs.
 ## Repository layout
 
 ```text
-quantguard/
+Finshield/
 ├── backend/          # FastAPI service, quant engine, analysis modules, and tests
 ├── frontend/         # React/Vite client
 ├── data/             # Committed seed CSVs and local warehouse output

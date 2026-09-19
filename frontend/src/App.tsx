@@ -71,7 +71,7 @@ export default function App() {
       <header className="topbar">
         <div>
           <div className="eyebrow">QUANTITATIVE INTELLIGENCE PLATFORM</div>
-          <h1>QuantGuard</h1>
+          <h1>Finshield</h1>
           <p>Don&apos;t just backtest. Stress-test.</p>
         </div>
         <div className="api-status"><span /> API connected</div>
