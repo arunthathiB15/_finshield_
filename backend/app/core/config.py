@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     seed_data_path: str = "data"
     featherless_api_key: str | None = None
     featherless_model: str | None = None
+    featherless_api_url: str = "https://api.featherless.ai/v1/chat/completions"
+    featherless_timeout_seconds: float = 30.0
     frontend_origin: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(

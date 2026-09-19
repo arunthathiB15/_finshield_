@@ -13,7 +13,7 @@ QuantGuard is a production-shaped MVP for multi-asset quantitative research. It 
 - Causal SMA/EMA indicators and a long/flat SMA crossover strategy
 - Backtesting with one-bar signal delay, transaction costs, slippage, and buy-and-hold benchmarks
 - Chronological train/test validation, trend and volatility regime attribution, cost sensitivity, parameter sensitivity, and a transparent Strategy Trust Score
-- Featherless configuration placeholders only; the server-side AI explanation is planned for Step 5 and is not yet called
+- Server-side Featherless explanation layer that receives computed JSON context only; it never calculates metrics or predicts prices
 
 ## Current API slice
 
@@ -26,6 +26,7 @@ GET /api/assets
 GET /api/assets/{symbol}/series?start=YYYY-MM-DD&end=YYYY-MM-DD
 POST /api/backtest
 POST /api/analysis
+POST /api/explanation
 ```
 
 The series endpoint returns OHLCV plus causal 20-day SMA, EMA, annualized
@@ -49,6 +50,16 @@ breakdowns, transaction-cost sensitivity, nearby SMA parameter sensitivity, and
 a transparent 0-100 Strategy Trust Score. The score is a historical robustness
 summary, not a prediction or a guarantee of future returns.
 
+Step 5 adds `POST /api/explanation`. The endpoint accepts a validated
+`AnalysisResponse` from the deterministic quant engine and, when
+`FEATHERLESS_API_KEY` and `FEATHERLESS_MODEL` are configured, sends that JSON to
+Featherless as an OpenAI-compatible chat-completions request. Featherless is used
+only to turn the supplied metrics into plain language: it is explicitly instructed
+not to calculate, invent numbers, predict prices, or recommend trades. When the
+provider is not configured or is unavailable, the API returns a transparent
+deterministic fallback explanation so the local demo still works. The provider
+key remains server-side and must never be committed.
+
 The first metrics are deliberately transparent: total return compounds daily
 returns; CAGR annualises that compounded result; Sharpe is average return per
 unit of volatility; Sortino replaces total volatility with downside deviation;
@@ -60,8 +71,8 @@ the compounded gross result minus the compounded result after costs.
 - Steps 1-2: committed seed-data warehouse, asset API, causal indicators, and asset dashboard.
 - Step 3: committed SMA crossover backtest lab with costs, slippage, benchmark, equity curve, trade log, metrics, tests, and CI.
 - Step 4: deterministic reliability analysis described above.
-- Step 5: planned server-side Featherless explanation endpoint. Featherless will receive computed JSON only; it will never calculate metrics or predict prices.
-- Step 6: planned AI analyst UI, final documentation, demo rehearsal, and submission verification.
+- Step 5: server-side Featherless explanation endpoint, safe deterministic fallback, and frontend explanation panel.
+- Step 6: final documentation, demo rehearsal, and submission verification.
 
 ## Repository layout
 
@@ -86,7 +97,7 @@ Financial formulas will be documented in the code and explained in the product U
 
 ## Local development
 
-Prerequisites: Python 3.11, Node.js 20+, and npm.
+Prerequisites: Python 3.11+, Node.js 20+, and npm.
 
 ```bash
 cp .env.example .env
@@ -95,6 +106,29 @@ source .venv/bin/activate
 pip install -r backend/requirements.txt
 uvicorn backend.app.main:app --reload --port 8000
 ```
+
+On Windows PowerShell, use the equivalent commands:
+
+```powershell
+Copy-Item .env.example .env
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r backend\requirements.txt
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
+
+To enable the Featherless language layer, set these values in the uncommitted
+`.env` file using a model available in your Featherless account:
+
+```text
+FEATHERLESS_API_KEY=your-server-side-key
+FEATHERLESS_MODEL=your-featherless-model
+```
+
+The default provider URL is the Featherless OpenAI-compatible chat-completions
+endpoint. See the [Featherless completions documentation](https://featherless.ai/docs/completions)
+for the current provider contract. Leaving these values blank uses the local
+deterministic fallback.
 
 In a second terminal:
 

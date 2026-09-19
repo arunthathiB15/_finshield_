@@ -168,3 +168,16 @@ export type AnalysisResponse = {
   parameter_sensitivity: ParameterSensitivityPoint[];
   trust_score: TrustScore;
 };
+
+export type ExplanationRequest = {
+  analysis: AnalysisResponse;
+  question?: string | null;
+};
+
+export type ExplanationResponse = {
+  explanation: string;
+  source: "featherless" | "deterministic_fallback";
+  model: string | null;
+  notice: string | null;
+  disclaimer: string;
+};

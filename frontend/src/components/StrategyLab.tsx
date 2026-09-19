@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { EquityChart } from "./EquityChart";
+import { ExplanationPanel } from "./ExplanationPanel";
 
 type StrategyLabProps = {
   assets: AssetSummary[];
@@ -99,7 +100,12 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
           <div className="panel-heading"><div><h3>Equity curve vs buy-and-hold</h3><p className="muted">Showing the latest 365 available sessions from {result.period_start} to {result.period_end}.</p></div></div>
           <EquityChart data={curve} />
           <div className="trade-log"><h3>Trade log</h3><div className="table-scroll"><table><thead><tr><th>Date</th><th>Action</th><th>Price</th><th>Turnover</th><th>Cost</th></tr></thead><tbody>{result.trades.slice(-10).map((trade) => <tr key={`${trade.date}-${trade.action}`}><td>{trade.date}</td><td className={trade.action === "BUY" ? "positive" : "negative"}>{trade.action}</td><td>{money(trade.price)}</td><td>{trade.turnover.toFixed(2)}×</td><td>{money(trade.cost)}</td></tr>)}</tbody></table></div></div>
-          {analysisMutation.data && <AnalysisPanel analysis={analysisMutation.data} />}
+          {analysisMutation.data && (
+            <>
+              <AnalysisPanel analysis={analysisMutation.data} />
+              <ExplanationPanel analysis={analysisMutation.data} />
+            </>
+          )}
         </div>
       )}
     </section>

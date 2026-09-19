@@ -183,3 +183,18 @@ class AnalysisResponse(BaseModel):
     cost_sensitivity: list[CostSensitivityPoint]
     parameter_sensitivity: list[ParameterSensitivityPoint]
     trust_score: TrustScore
+
+
+class ExplanationRequest(BaseModel):
+    """A validated deterministic analysis plus an optional user question."""
+
+    analysis: AnalysisResponse
+    question: str | None = Field(default=None, max_length=600)
+
+
+class ExplanationResponse(BaseModel):
+    explanation: str = Field(min_length=1)
+    source: Literal["featherless", "deterministic_fallback"]
+    model: str | None = None
+    notice: str | None = None
+    disclaimer: str
