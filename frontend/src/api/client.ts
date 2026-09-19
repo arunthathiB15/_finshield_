@@ -1,4 +1,11 @@
-import type { AssetSeries, AssetSummary, BacktestRequest, BacktestResponse } from "../types";
+import type {
+  AnalysisRequest,
+  AnalysisResponse,
+  AssetSeries,
+  AssetSummary,
+  BacktestRequest,
+  BacktestResponse,
+} from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -29,4 +36,17 @@ export async function runBacktest(payload: BacktestRequest): Promise<BacktestRes
     throw new Error(detail || `QuantGuard API returned ${response.status}`);
   }
   return response.json() as Promise<BacktestResponse>;
+}
+
+export async function runAnalysis(payload: AnalysisRequest): Promise<AnalysisResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/analysis`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `QuantGuard API returned ${response.status}`);
+  }
+  return response.json() as Promise<AnalysisResponse>;
 }

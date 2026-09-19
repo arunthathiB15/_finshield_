@@ -17,6 +17,7 @@ class AssetSummary(BaseModel):
     last_close: float = Field(gt=0)
     total_return: float
     annualized_volatility: float
+    periods_per_year: int
     missing_days: int = Field(ge=0)
     quality_status: str
 
@@ -58,6 +59,10 @@ class BacktestRequest(BaseModel):
     period: BacktestPeriod = Field(default_factory=BacktestPeriod)
 
 
+class AnalysisRequest(BacktestRequest):
+    train_fraction: float = Field(default=0.7, ge=0.5, le=0.9)
+
+
 class BacktestMetrics(BaseModel):
     cagr: float
     total_return: float
@@ -97,9 +102,84 @@ class BacktestResponse(BaseModel):
     capital: float
     transaction_cost: float
     slippage: float
+    periods_per_year: int
     period_start: date
     period_end: date
     metrics: BacktestMetrics
     benchmark_metrics: BacktestMetrics
     equity_curve: list[EquityPoint]
     trades: list[TradeEvent]
+
+
+class RegimeMetric(BaseModel):
+    category: Literal["trend", "volatility"]
+    regime: str
+    observations: int = Field(ge=1)
+    active_days: int = Field(ge=0)
+    strategy_total_return: float
+    benchmark_total_return: float
+    strategy_sharpe: float
+    strategy_max_drawdown: float
+    outperformance: float
+
+
+class CostSensitivityPoint(BaseModel):
+    transaction_cost: float = Field(ge=0)
+    total_friction: float = Field(ge=0)
+    total_return: float
+    sharpe: float
+    max_drawdown: float
+    cost_drag: float
+    trade_count: int = Field(ge=0)
+
+
+class ParameterSensitivityPoint(BaseModel):
+    fast_window: int = Field(ge=2)
+    slow_window: int = Field(ge=3)
+    total_return: float
+    sharpe: float
+    max_drawdown: float
+    trade_count: int = Field(ge=0)
+
+
+class ValidationSummary(BaseModel):
+    split_date: date
+    train_start: date
+    train_end: date
+    test_start: date
+    test_end: date
+    train_rows: int = Field(ge=1)
+    test_rows: int = Field(ge=1)
+    train_metrics: BacktestMetrics
+    train_benchmark_metrics: BacktestMetrics
+    test_metrics: BacktestMetrics
+    test_benchmark_metrics: BacktestMetrics
+
+
+class TrustScoreComponent(BaseModel):
+    name: str
+    weight: float = Field(ge=0)
+    score: float = Field(ge=0, le=100)
+    contribution: float = Field(ge=0)
+    rationale: str
+
+
+class TrustScore(BaseModel):
+    score: float = Field(ge=0, le=100)
+    verdict: str
+    components: list[TrustScoreComponent]
+    disclaimer: str
+
+
+class AnalysisResponse(BaseModel):
+    symbol: str
+    strategy: str
+    parameters: dict[str, int | float]
+    periods_per_year: int
+    metrics: BacktestMetrics
+    benchmark_metrics: BacktestMetrics
+    validation: ValidationSummary
+    regime_breakdown: list[RegimeMetric]
+    cost_sensitivity: list[CostSensitivityPoint]
+    parameter_sensitivity: list[ParameterSensitivityPoint]
+    trust_score: TrustScore

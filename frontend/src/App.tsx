@@ -66,7 +66,7 @@ export default function App() {
         <section className="metric-grid">
           <article className="metric-card"><span>Last close</span><strong>{money(selectedAsset.last_close)}</strong><small>{selectedAsset.end_date}</small></article>
           <article className="metric-card"><span>Full-period return</span><strong className={selectedAsset.total_return >= 0 ? "positive" : "negative"}>{percent(selectedAsset.total_return)}</strong><small>Close-to-close</small></article>
-          <article className="metric-card"><span>Annualized volatility</span><strong>{percent(selectedAsset.annualized_volatility)}</strong><small>Daily returns × √252</small></article>
+          <article className="metric-card"><span>Annualized volatility</span><strong>{percent(selectedAsset.annualized_volatility)}</strong><small>Daily returns × √{selectedAsset.periods_per_year}</small></article>
           <article className="metric-card"><span>Data quality</span><strong>{selectedAsset.quality_status.toUpperCase()}</strong><small>{selectedAsset.rows.toLocaleString()} rows · {selectedAsset.missing_days} expected sessions missing</small></article>
         </section>
       )}

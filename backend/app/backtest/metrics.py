@@ -43,6 +43,8 @@ def sharpe_ratio(returns: pd.Series, periods_per_year: int = TRADING_DAYS) -> fl
 def sortino_ratio(returns: pd.Series, periods_per_year: int = TRADING_DAYS) -> float:
     """Return per unit of downside deviation; positive days do not penalise it."""
 
+    if returns.empty:
+        return 0.0
     negative = returns.astype(float).where(returns < 0, 0.0)
     downside_deviation = float(np.sqrt((negative**2).mean()))
     if downside_deviation == 0:
@@ -53,13 +55,19 @@ def sortino_ratio(returns: pd.Series, periods_per_year: int = TRADING_DAYS) -> f
 def maximum_drawdown(equity: pd.Series) -> float:
     """Largest peak-to-trough fall in an equity curve."""
 
+    if equity.empty:
+        return 0.0
     running_peak = equity.astype(float).cummax()
     return float((equity.astype(float) / running_peak - 1.0).min())
 
 
-def calmar_ratio(returns: pd.Series, equity: pd.Series) -> float:
+def calmar_ratio(
+    returns: pd.Series,
+    equity: pd.Series,
+    periods_per_year: int = TRADING_DAYS,
+) -> float:
     drawdown = maximum_drawdown(equity)
-    return float(cagr(returns) / abs(drawdown)) if drawdown < 0 else 0.0
+    return float(cagr(returns, periods_per_year) / abs(drawdown)) if drawdown < 0 else 0.0
 
 
 def win_rate(returns: pd.Series) -> float:
@@ -88,15 +96,16 @@ def calculate_metrics(
     gross_returns: pd.Series,
     equity: pd.Series,
     turnover: pd.Series,
+    periods_per_year: int = TRADING_DAYS,
 ) -> dict[str, float | int]:
     return {
-        "cagr": cagr(net_returns),
+        "cagr": cagr(net_returns, periods_per_year),
         "total_return": total_return(net_returns),
-        "annualized_volatility": annualized_volatility(net_returns),
-        "sharpe": sharpe_ratio(net_returns),
-        "sortino": sortino_ratio(net_returns),
+        "annualized_volatility": annualized_volatility(net_returns, periods_per_year),
+        "sharpe": sharpe_ratio(net_returns, periods_per_year),
+        "sortino": sortino_ratio(net_returns, periods_per_year),
         "max_drawdown": maximum_drawdown(equity),
-        "calmar": calmar_ratio(net_returns, equity),
+        "calmar": calmar_ratio(net_returns, equity, periods_per_year),
         "win_rate": win_rate(net_returns),
         "trade_count": trade_count(turnover),
         "turnover": turnover_total(turnover),

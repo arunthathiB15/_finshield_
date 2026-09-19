@@ -8,6 +8,7 @@ export type AssetSummary = {
   last_close: number;
   total_return: number;
   annualized_volatility: number;
+  periods_per_year: number;
   missing_days: number;
   quality_status: string;
 };
@@ -40,6 +41,10 @@ export type BacktestRequest = {
   cost: number;
   slippage: number;
   period: { start: string | null; end: string | null };
+};
+
+export type AnalysisRequest = BacktestRequest & {
+  train_fraction: number;
 };
 
 export type BacktestMetrics = {
@@ -81,10 +86,85 @@ export type BacktestResponse = {
   capital: number;
   transaction_cost: number;
   slippage: number;
+  periods_per_year: number;
   period_start: string;
   period_end: string;
   metrics: BacktestMetrics;
   benchmark_metrics: BacktestMetrics;
   equity_curve: EquityPoint[];
   trades: TradeEvent[];
+};
+
+export type RegimeMetric = {
+  category: "trend" | "volatility";
+  regime: string;
+  observations: number;
+  active_days: number;
+  strategy_total_return: number;
+  benchmark_total_return: number;
+  strategy_sharpe: number;
+  strategy_max_drawdown: number;
+  outperformance: number;
+};
+
+export type CostSensitivityPoint = {
+  transaction_cost: number;
+  total_friction: number;
+  total_return: number;
+  sharpe: number;
+  max_drawdown: number;
+  cost_drag: number;
+  trade_count: number;
+};
+
+export type ParameterSensitivityPoint = {
+  fast_window: number;
+  slow_window: number;
+  total_return: number;
+  sharpe: number;
+  max_drawdown: number;
+  trade_count: number;
+};
+
+export type ValidationSummary = {
+  split_date: string;
+  train_start: string;
+  train_end: string;
+  test_start: string;
+  test_end: string;
+  train_rows: number;
+  test_rows: number;
+  train_metrics: BacktestMetrics;
+  train_benchmark_metrics: BacktestMetrics;
+  test_metrics: BacktestMetrics;
+  test_benchmark_metrics: BacktestMetrics;
+};
+
+export type TrustScoreComponent = {
+  name: string;
+  weight: number;
+  score: number;
+  contribution: number;
+  rationale: string;
+};
+
+export type TrustScore = {
+  score: number;
+  verdict: string;
+  components: TrustScoreComponent[];
+  disclaimer: string;
+};
+
+export type AnalysisResponse = {
+  symbol: string;
+  strategy: string;
+  parameters: { fast_window: number; slow_window: number };
+  periods_per_year: number;
+  metrics: BacktestMetrics;
+  benchmark_metrics: BacktestMetrics;
+  validation: ValidationSummary;
+  regime_breakdown: RegimeMetric[];
+  cost_sensitivity: CostSensitivityPoint[];
+  parameter_sensitivity: ParameterSensitivityPoint[];
+  trust_score: TrustScore;
 };

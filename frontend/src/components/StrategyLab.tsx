@@ -1,8 +1,15 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { runBacktest } from "../api/client";
-import type { AssetSummary, BacktestRequest, BacktestResponse } from "../types";
+import { runAnalysis, runBacktest } from "../api/client";
+import type {
+  AnalysisRequest,
+  AnalysisResponse,
+  AssetSummary,
+  BacktestRequest,
+  BacktestResponse,
+} from "../types";
+import { AnalysisPanel } from "./AnalysisPanel";
 import { EquityChart } from "./EquityChart";
 
 type StrategyLabProps = {
@@ -32,10 +39,11 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const mutation = useMutation<BacktestResponse, Error, BacktestRequest>({ mutationFn: runBacktest });
+  const analysisMutation = useMutation<AnalysisResponse, Error, AnalysisRequest>({ mutationFn: runAnalysis });
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    mutation.mutate({
+    const payload: BacktestRequest = {
       symbol,
       strategy: "sma_crossover",
       params: { fast_window: Number(fastWindow), slow_window: Number(slowWindow) },
@@ -43,6 +51,10 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
       cost: Number(costBps) / 10_000,
       slippage: Number(slippageBps) / 10_000,
       period: { start: start || null, end: end || null },
+    };
+    analysisMutation.reset();
+    mutation.mutate(payload, {
+      onSuccess: () => analysisMutation.mutate({ ...payload, train_fraction: 0.7 }),
     });
   }
 
@@ -57,7 +69,7 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
           <h3>Test one strategy with visible assumptions.</h3>
           <p className="muted">Signals are shifted one bar before returns. Costs and slippage are charged on every position change.</p>
         </div>
-        {mutation.isPending && <span className="loading-label">Running…</span>}
+        {(mutation.isPending || analysisMutation.isPending) && <span className="loading-label">Running reliability checks…</span>}
       </div>
 
       <form className="form-grid" onSubmit={submit}>
@@ -70,10 +82,11 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
         <label className="field"><span>Slow SMA days</span><input type="number" min="3" value={slowWindow} onChange={(event) => setSlowWindow(event.target.value)} /></label>
         <label className="field"><span>Start date (optional)</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} /></label>
         <label className="field"><span>End date (optional)</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
-        <button className="primary-button" type="submit" disabled={mutation.isPending}>Run backtest</button>
+        <button className="primary-button" type="submit" disabled={mutation.isPending || analysisMutation.isPending}>Run backtest</button>
       </form>
 
       {mutation.isError && <p className="error">Backtest failed: {mutation.error.message}</p>}
+      {analysisMutation.isError && <p className="error">Reliability analysis failed: {analysisMutation.error.message}</p>}
 
       {result && (
         <div className="backtest-results">
@@ -86,6 +99,7 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
           <div className="panel-heading"><div><h3>Equity curve vs buy-and-hold</h3><p className="muted">Showing the latest 365 available sessions from {result.period_start} to {result.period_end}.</p></div></div>
           <EquityChart data={curve} />
           <div className="trade-log"><h3>Trade log</h3><div className="table-scroll"><table><thead><tr><th>Date</th><th>Action</th><th>Price</th><th>Turnover</th><th>Cost</th></tr></thead><tbody>{result.trades.slice(-10).map((trade) => <tr key={`${trade.date}-${trade.action}`}><td>{trade.date}</td><td className={trade.action === "BUY" ? "positive" : "negative"}>{trade.action}</td><td>{money(trade.price)}</td><td>{trade.turnover.toFixed(2)}×</td><td>{money(trade.cost)}</td></tr>)}</tbody></table></div></div>
+          {analysisMutation.data && <AnalysisPanel analysis={analysisMutation.data} />}
         </div>
       )}
     </section>

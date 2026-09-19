@@ -10,6 +10,7 @@ from backend.app.core.schemas import (
     TradeEvent,
 )
 from backend.app.data.store import MarketDataStore
+from backend.app.quant.calendar import periods_per_year_for_symbol
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
 
@@ -29,6 +30,7 @@ def create_backtest(payload: BacktestRequest, request: Request) -> BacktestRespo
     if frame.empty:
         raise HTTPException(status_code=404, detail=f"No market data found for {symbol}")
     try:
+        periods_per_year = periods_per_year_for_symbol(symbol)
         result = run_backtest(
             frame=frame,
             strategy_name=payload.strategy,
@@ -36,6 +38,7 @@ def create_backtest(payload: BacktestRequest, request: Request) -> BacktestRespo
             capital=payload.capital,
             transaction_cost=payload.cost,
             slippage=payload.slippage,
+            periods_per_year=periods_per_year,
         )
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
@@ -69,6 +72,7 @@ def create_backtest(payload: BacktestRequest, request: Request) -> BacktestRespo
         capital=payload.capital,
         transaction_cost=payload.cost,
         slippage=payload.slippage,
+        periods_per_year=periods_per_year,
         period_start=curve[0].date,
         period_end=curve[-1].date,
         metrics=BacktestMetrics(**result.metrics),

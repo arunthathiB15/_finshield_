@@ -43,6 +43,32 @@ select { color: #eef4ff; background: #0a1220; border: 1px solid #34445f; border-
 .backtest-results { margin-top: 26px; border-top: 1px solid #202e45; padding-top: 22px; }
 .result-grid { margin: 0 0 20px; }
 .trade-log { margin-top: 24px; }
+.analysis-section { margin-top: 30px; border-top: 1px solid #202e45; padding-top: 26px; }
+.analysis-heading { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+.trust-score-card { min-width: 220px; padding: 18px 20px; border: 1px solid #376b70; border-radius: 14px; background: linear-gradient(135deg, #102e35, #102034); display: grid; gap: 5px; }
+.trust-score-card span, .trust-score-card em { color: #9eabc2; font-size: 12px; font-style: normal; }
+.trust-score-card strong { color: #5eead4; font-size: 38px; line-height: 1; }
+.trust-score-card strong small { color: #9eabc2; font-size: 16px; }
+.validation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+.validation-card, .analysis-card { background: #0b1423; border: 1px solid #202e45; border-radius: 14px; padding: 18px; }
+.validation-card { display: grid; gap: 7px; color: #9eabc2; font-size: 12px; }
+.validation-card strong { color: #eef4ff; font-size: 14px; }
+.validation-card span { line-height: 1.4; }
+.validation-meta { align-content: center; }
+.analysis-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 14px; }
+.analysis-card h4 { margin: 0 0 12px; font-size: 16px; }
+.analysis-card table { font-size: 12px; }
+.analysis-card th, .analysis-card td { padding: 9px 8px; }
+.small-copy { font-size: 12px; margin: -4px 0 10px; }
+.compact-chart { margin-top: 4px; }
+.trust-components { display: grid; gap: 14px; }
+.trust-component { display: grid; gap: 6px; }
+.trust-component > div:first-child { display: flex; justify-content: space-between; gap: 12px; color: #d8e2f2; font-size: 12px; }
+.trust-component > div:first-child strong { color: #5eead4; }
+.trust-component small { color: #8f9db4; line-height: 1.35; }
+.trust-bar { height: 6px; background: #1d2a3f; border-radius: 999px; overflow: hidden; }
+.trust-bar span { display: block; height: 100%; background: linear-gradient(90deg, #2dd4bf, #5eead4); border-radius: inherit; }
+.analysis-disclaimer { color: #64748b; font-size: 11px; margin: 18px 0 0; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; color: #d8e2f2; font-size: 13px; }
 th, td { padding: 11px 12px; border-bottom: 1px solid #202e45; text-align: left; white-space: nowrap; }
@@ -57,6 +83,9 @@ footer { color: #64748b; font-size: 12px; text-align: center; padding: 28px 0 0;
   .topbar, .hero-panel, .panel-heading { flex-direction: column; }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .validation-grid, .analysis-grid { grid-template-columns: 1fr; }
+  .analysis-heading { flex-direction: column; }
+  .trust-score-card { width: 100%; }
   .asset-picker { width: 100%; }
 }
 

@@ -5,6 +5,7 @@ from backend.app.core.schemas import AssetSeries, AssetSummary, SeriesPoint
 from backend.app.data.loader import ASSET_NAMES
 from backend.app.data.store import MarketDataStore
 from backend.app.quant.indicators import add_price_indicators
+from backend.app.quant.calendar import periods_per_year_for_symbol
 
 router = APIRouter(prefix="/api/assets", tags=["assets"])
 
@@ -26,6 +27,7 @@ def list_assets(request: Request) -> list[AssetSummary]:
         expected_frequency = "D" if symbol == "BTC-USD" else "B"
         expected = pd.date_range(start_date, end_date, freq=expected_frequency)
         missing_days = int(expected.difference(pd.DatetimeIndex(frame["date"])).size)
+        periods_per_year = periods_per_year_for_symbol(symbol)
         summaries.append(
             AssetSummary(
                 symbol=symbol,
@@ -36,7 +38,8 @@ def list_assets(request: Request) -> list[AssetSummary]:
                 rows=len(frame),
                 last_close=float(close.iloc[-1]),
                 total_return=float(close.iloc[-1] / close.iloc[0] - 1),
-                annualized_volatility=float(returns.std() * (252**0.5)),
+                annualized_volatility=float(returns.std() * (periods_per_year**0.5)),
+                periods_per_year=periods_per_year,
                 missing_days=missing_days,
                 quality_status="warning" if missing_days else "ok",
             )
@@ -55,7 +58,7 @@ def asset_series(
     frame = _store(request).get_frame(symbol, start=start, end=end)
     if frame.empty:
         raise HTTPException(status_code=404, detail=f"No market data found for {symbol}")
-    frame = add_price_indicators(frame)
+    frame = add_price_indicators(frame, periods_per_year_for_symbol(symbol))
     points: list[SeriesPoint] = []
     for row in frame.itertuples(index=False):
         points.append(

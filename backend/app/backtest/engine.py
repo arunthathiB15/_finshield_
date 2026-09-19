@@ -14,6 +14,12 @@ class BacktestResult:
     benchmark_metrics: dict[str, float | int]
     equity_curve: pd.DataFrame
     trades: pd.DataFrame
+    strategy_returns: pd.Series
+    strategy_gross_returns: pd.Series
+    strategy_turnover: pd.Series
+    benchmark_returns: pd.Series
+    benchmark_gross_returns: pd.Series
+    benchmark_turnover: pd.Series
 
 
 def run_backtest(
@@ -23,6 +29,7 @@ def run_backtest(
     capital: float,
     transaction_cost: float,
     slippage: float,
+    periods_per_year: int = 252,
 ) -> BacktestResult:
     """Run a deterministic long/flat daily backtest with next-bar execution."""
 
@@ -89,13 +96,26 @@ def run_backtest(
 
     return BacktestResult(
         parameters=params,
-        metrics=calculate_metrics(net_returns, gross_returns, equity, turnover),
+        metrics=calculate_metrics(
+            net_returns,
+            gross_returns,
+            equity,
+            turnover,
+            periods_per_year,
+        ),
         benchmark_metrics=calculate_metrics(
             benchmark_net_returns,
             benchmark_gross_returns,
             benchmark_equity,
             benchmark_turnover,
+            periods_per_year,
         ),
         equity_curve=equity_curve,
         trades=trades,
+        strategy_returns=net_returns,
+        strategy_gross_returns=gross_returns,
+        strategy_turnover=turnover,
+        benchmark_returns=benchmark_net_returns,
+        benchmark_gross_returns=benchmark_gross_returns,
+        benchmark_turnover=benchmark_turnover,
     )
