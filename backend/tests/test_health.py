@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from backend.app.core.config import settings
 from backend.app.main import app
 
 
@@ -7,6 +8,11 @@ def test_health_endpoint() -> None:
     response = TestClient(app).get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "quantguard-api"}
+
+
+def test_runtime_data_paths_are_anchored_to_the_repository() -> None:
+    assert settings.database_file.is_absolute()
+    assert settings.seed_directory.is_absolute()
 
 
 def test_assets_and_nvda_series() -> None:

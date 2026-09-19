@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
 
 class Settings(BaseSettings):
     """Runtime configuration loaded from environment variables or .env."""
@@ -18,7 +20,7 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -26,11 +28,13 @@ class Settings(BaseSettings):
 
     @property
     def database_file(self) -> Path:
-        return Path(self.database_path)
+        path = Path(self.database_path)
+        return path if path.is_absolute() else PROJECT_ROOT / path
 
     @property
     def seed_directory(self) -> Path:
-        return Path(self.seed_data_path)
+        path = Path(self.seed_data_path)
+        return path if path.is_absolute() else PROJECT_ROOT / path
 
 
 settings = Settings()

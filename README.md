@@ -139,7 +139,10 @@ npm run dev
 ```
 
 Install dependencies only after cloning or changing dependency files. Start one
-FastAPI process at a time; a second process can lock the local DuckDB file.
+FastAPI process at a time; a second process can lock the local DuckDB file. The
+backend resolves the committed `data` directory from the repository root, so
+launching it from another current folder does not silently produce an empty
+asset list.
 
 The API health endpoint will be available at `http://localhost:8000/health`.
 

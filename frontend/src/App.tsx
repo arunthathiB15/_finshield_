@@ -40,7 +40,30 @@ export default function App() {
   }
 
   if (assetsQuery.isError) {
-    return <main className="page-state error">API unavailable. Start FastAPI on port 8000.</main>;
+    return (
+      <main className="page-state error">
+        <div>
+          <p>API unavailable. Start FastAPI on port 8000.</p>
+          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
+            Retry connection
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (assetsQuery.data?.length === 0) {
+    return (
+      <main className="page-state error">
+        <div>
+          <p>No market assets were loaded by the backend.</p>
+          <p className="muted">Restart FastAPI from the `_finshield_` repository folder, then retry.</p>
+          <button className="primary-button" type="button" onClick={() => assetsQuery.refetch()}>
+            Retry asset loading
+          </button>
+        </div>
+      </main>
+    );
   }
 
   return (
