@@ -15,6 +15,24 @@ QuantGuard is a production-shaped MVP for multi-asset quantitative research. It 
 - Walk-forward validation, regime analysis, EWMA/GARCH volatility, and robustness testing
 - Server-side Featherless explanations based only on computed JSON metrics
 
+## Current API slice
+
+The current MVP slice loads the committed Yahoo Finance snapshots for all three
+assets into `data/quantguard.duckdb` during API startup. It exposes:
+
+```text
+GET /health
+GET /api/assets
+GET /api/assets/{symbol}/series?start=YYYY-MM-DD&end=YYYY-MM-DD
+```
+
+The series endpoint returns OHLCV plus causal 20-day SMA, EMA, annualized
+rolling volatility, and drawdown. The frontend currently uses that endpoint to
+render the Asset Intelligence chart. A missing exchange session is reported as
+a data-quality gap; prices are not forward-filled because that would invent a
+trade. Yahoo Finance is the online ingestion path and Stooq is the fallback;
+the committed CSVs make the demo independent of both services.
+
 ## Repository layout
 
 ```text
