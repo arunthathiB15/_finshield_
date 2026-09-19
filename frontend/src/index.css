@@ -21,49 +21,196 @@
   display: none;
 }
 
+/* Light Liquid Glass Default Body */
+html.light body, body {
+  background: radial-gradient(120% 80% at 50% -10%, rgba(219, 234, 254, 0.5) 0%, rgba(240, 246, 255, 0.25) 45%, #FFFFFF 100%), #FFFFFF;
+  color: #0F172A;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Dark Mode Body */
 html.dark body {
-  background-color: #0f131d;
+  background: radial-gradient(120% 80% at 50% -10%, rgba(15, 30, 55, 0.55) 0%, rgba(10, 15, 26, 0.8) 50%, #0a0e18 100%), #0a0e18;
   color: #dfe2f1;
 }
 
-html.light body {
-  background: radial-gradient(120% 80% at 50% -10%, rgba(219, 234, 254, 0.45) 0%, rgba(240, 246, 255, 0.2) 45%, #FFFFFF 100%), #FFFFFF;
-  color: #0F172A;
+/* Base App Shell Layout */
+.app-shell {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 100px 24px 48px;
+  display: flex;
+  flex-col: column;
+  gap: 24px;
 }
 
-/* Liquid Glass Specular Components */
-.liquid-glass-card {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+@media (max-width: 768px) {
+  .app-shell {
+    padding: 84px 16px 36px;
+    gap: 18px;
+  }
+}
+
+/* ==========================================================================
+   DYNAMIC LIQUID GLASS CARDS & HOVER MOVEMENTS
+   ========================================================================== */
+
+.dynamic-glass-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s ease;
+}
+
+/* Light Theme Glass */
+html.light .dynamic-glass-card,
+.dynamic-glass-card {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05),
+              0 1px 2px rgba(15, 23, 42, 0.02),
+              inset 0 1px 1px rgba(255, 255, 255, 0.95);
 }
 
-.liquid-glass-subtle {
-  background: rgba(248, 250, 252, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.7);
+/* Cursor Reaches Box: Dynamic Hover Elevation & Specular Glow */
+html.light .dynamic-glass-card:hover,
+.dynamic-glass-card:hover {
+  transform: translateY(-4px) scale(1.006);
+  box-shadow: 0 20px 42px rgba(0, 102, 255, 0.12),
+              0 2px 8px rgba(15, 23, 42, 0.04),
+              inset 0 1px 2px rgba(255, 255, 255, 1);
+  border-color: rgba(0, 102, 255, 0.35);
 }
 
-.liquid-glass-input {
-  background: rgba(248, 250, 252, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(203, 213, 225, 0.75);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+/* Dark Theme Glass */
+html.dark .dynamic-glass-card {
+  background: rgba(23, 27, 38, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+              inset 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 
-.liquid-glass-input:focus-within,
-.liquid-glass-input:focus {
+html.dark .dynamic-glass-card:hover {
+  transform: translateY(-4px) scale(1.006);
+  box-shadow: 0 20px 48px rgba(0, 240, 255, 0.14),
+              0 4px 12px rgba(0, 0, 0, 0.6),
+              inset 0 1px 2px rgba(0, 240, 255, 0.2);
+  border-color: rgba(0, 240, 255, 0.45);
+}
+
+/* Interactive Cursor Spotlight Glow Effect on Cards */
+.dynamic-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(0, 102, 255, 0.07),
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.dark .dynamic-glass-card::before {
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(0, 240, 255, 0.09),
+    transparent 50%
+  );
+}
+
+.dynamic-glass-card:hover::before {
+  opacity: 1;
+}
+
+/* Sub-card styling */
+.dynamic-subcard {
+  position: relative;
+  border-radius: 14px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease,
+              background-color 0.22s ease;
+}
+
+html.light .dynamic-subcard {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.75);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+html.light .dynamic-subcard:hover {
+  transform: translateY(-2px);
+  background: #ffffff;
+  border-color: rgba(0, 102, 255, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 102, 255, 0.08);
+}
+
+html.dark .dynamic-subcard {
+  background: rgba(15, 19, 29, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .dynamic-subcard:hover {
+  transform: translateY(-2px);
+  background: rgba(28, 31, 42, 0.9);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 240, 255, 0.08);
+}
+
+/* Metric Pill / Badge Hover */
+.metric-pill {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.metric-pill:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+/* Buttons */
+.liquid-button {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.liquid-button:hover {
+  transform: translateY(-1px) scale(1.015);
+  box-shadow: 0 8px 24px rgba(0, 102, 255, 0.3);
+}
+.liquid-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Form Inputs */
+.liquid-input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.liquid-input:focus {
+  outline: none;
   border-color: #0066ff;
-  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.14), inset 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15);
 }
 
-.gloss-reflection {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 100%);
+/* Table Hover Row */
+.liquid-table tr {
+  transition: background-color 0.15s ease;
+}
+html.light .liquid-table tbody tr:hover {
+  background-color: rgba(239, 246, 255, 0.6);
+}
+html.dark .liquid-table tbody tr:hover {
+  background-color: rgba(38, 42, 53, 0.6);
 }
 
-.scrollbar-none {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+.chart-shell {
+  width: 100%;
+  margin-top: 14px;
 }

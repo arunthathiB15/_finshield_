@@ -8,6 +8,7 @@ import type {
   AssetSummary,
   BacktestRequest,
   BacktestResponse,
+  ThemeMode,
 } from "../types";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { AssetSelector } from "./AssetSelector";
@@ -18,6 +19,7 @@ type StrategyLabProps = {
   assets: AssetSummary[];
   symbol: string;
   onSymbolChange: (symbol: string) => void;
+  theme?: ThemeMode;
 };
 
 function percent(value: number): string {
@@ -28,11 +30,52 @@ function money(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-function Metric({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return <article className="result-card"><span>{label}</span><strong>{value}</strong><small>{hint}</small></article>;
+function Metric({
+  label,
+  value,
+  hint,
+  isDark,
+  isPositive,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  isDark: boolean;
+  isPositive?: boolean;
+}) {
+  return (
+    <article className="dynamic-subcard p-4 flex flex-col justify-between min-h-[105px]">
+      <div className="flex items-center justify-between">
+        <span className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+          {label}
+        </span>
+      </div>
+      <div className="my-0.5">
+        <strong
+          className={`font-metric-lg text-xl sm:text-2xl font-bold ${
+            isPositive !== undefined
+              ? isPositive
+                ? "text-emerald-600 dark:text-primary-container"
+                : "text-rose-500"
+              : isDark
+              ? "text-on-surface"
+              : "text-text-obsidian"
+          }`}
+        >
+          {value}
+        </strong>
+      </div>
+      <small className="opacity-60 text-[11px] font-medium">{hint}</small>
+    </article>
+  );
 }
 
-export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps) {
+export function StrategyLab({
+  assets,
+  symbol,
+  onSymbolChange,
+  theme = "light",
+}: StrategyLabProps) {
   const [capital, setCapital] = useState("100000");
   const [costBps, setCostBps] = useState("10");
   const [slippageBps, setSlippageBps] = useState("5");
@@ -40,8 +83,15 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
   const [slowWindow, setSlowWindow] = useState("50");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
-  const mutation = useMutation<BacktestResponse, Error, BacktestRequest>({ mutationFn: runBacktest });
-  const analysisMutation = useMutation<AnalysisResponse, Error, AnalysisRequest>({ mutationFn: runAnalysis });
+
+  const isDark = theme === "dark";
+
+  const mutation = useMutation<BacktestResponse, Error, BacktestRequest>({
+    mutationFn: runBacktest,
+  });
+  const analysisMutation = useMutation<AnalysisResponse, Error, AnalysisRequest>({
+    mutationFn: runAnalysis,
+  });
   const previousSymbol = useRef(symbol);
 
   useEffect(() => {
@@ -73,47 +123,287 @@ export function StrategyLab({ assets, symbol, onSymbolChange }: StrategyLabProps
   const curve = result?.equity_curve.slice(-365) ?? [];
 
   return (
-    <section className="panel strategy-panel">
-      <div className="panel-heading">
+    <section className="dynamic-glass-card p-4 sm:p-6 mt-6 flex flex-col gap-5">
+      {/* Heading */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <div className="eyebrow">STRATEGY LAB</div>
-          <h3>Test one strategy with visible assumptions.</h3>
-          <p className="muted">Signals are shifted one bar before returns. Costs and slippage are charged on every position change.</p>
+          <div className="text-[11px] font-extrabold tracking-widest uppercase text-blue-600 dark:text-primary-container">
+            STEP 3 · STRATEGY LAB
+          </div>
+          <h3 className={`text-xl sm:text-2xl font-bold tracking-tight mt-1 ${isDark ? "text-on-surface" : "text-text-obsidian"}`}>
+            Test one strategy with visible assumptions.
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-on-surface-variant max-w-2xl mt-1">
+            Signals are shifted one bar before returns. Costs and slippage are charged on every position change.
+          </p>
         </div>
-        {(mutation.isPending || analysisMutation.isPending) && <span className="loading-label">Running reliability checks…</span>}
+        {(mutation.isPending || analysisMutation.isPending) && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-primary-container/10 text-blue-600 dark:text-primary-container border border-blue-200 dark:border-primary-container/20">
+            <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-primary-container animate-pulse" />
+            Running reliability checks…
+          </span>
+        )}
       </div>
 
-      <form className="form-grid" onSubmit={submit}>
-        <AssetSelector assets={assets} value={symbol} onChange={onSymbolChange} id="strategy-asset-selector" />
-        <label className="field"><span>Strategy</span><select value="sma_crossover" disabled><option value="sma_crossover">SMA crossover</option></select></label>
-        <label className="field"><span>Initial capital</span><input type="number" min="1" step="1000" value={capital} onChange={(event) => setCapital(event.target.value)} /></label>
-        <label className="field"><span>Transaction cost (bps)</span><input type="number" min="0" step="1" value={costBps} onChange={(event) => setCostBps(event.target.value)} /></label>
-        <label className="field"><span>Slippage (bps)</span><input type="number" min="0" step="1" value={slippageBps} onChange={(event) => setSlippageBps(event.target.value)} /></label>
-        <label className="field"><span>Fast SMA days</span><input type="number" min="2" value={fastWindow} onChange={(event) => setFastWindow(event.target.value)} /></label>
-        <label className="field"><span>Slow SMA days</span><input type="number" min="3" value={slowWindow} onChange={(event) => setSlowWindow(event.target.value)} /></label>
-        <label className="field"><span>Start date (optional)</span><input type="date" value={start} onChange={(event) => setStart(event.target.value)} /></label>
-        <label className="field"><span>End date (optional)</span><input type="date" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
-        <button className="primary-button" type="submit" disabled={!symbol || mutation.isPending || analysisMutation.isPending}>Run backtest</button>
+      {/* Assumptions Form */}
+      <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-end" onSubmit={submit}>
+        <AssetSelector
+          assets={assets}
+          value={symbol}
+          onChange={onSymbolChange}
+          id="strategy-asset-selector"
+          theme={theme}
+        />
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Strategy Architecture
+          </label>
+          <select
+            value="sma_crossover"
+            disabled
+            className={`w-full font-body-md text-sm py-2.5 px-3.5 rounded-xl font-semibold opacity-85 cursor-not-allowed ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          >
+            <option value="sma_crossover">SMA Crossover (Fast / Slow)</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Initial Capital ($)
+          </label>
+          <input
+            type="number"
+            min="1"
+            step="1000"
+            value={capital}
+            onChange={(event) => setCapital(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Transaction Cost (bps)
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={costBps}
+            onChange={(event) => setCostBps(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Slippage (bps)
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={slippageBps}
+            onChange={(event) => setSlippageBps(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Fast SMA Days
+          </label>
+          <input
+            type="number"
+            min="2"
+            value={fastWindow}
+            onChange={(event) => setFastWindow(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Slow SMA Days
+          </label>
+          <input
+            type="number"
+            min="3"
+            value={slowWindow}
+            onChange={(event) => setSlowWindow(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            Start Date (Optional)
+          </label>
+          <input
+            type="date"
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="font-label-caps text-[10px] uppercase opacity-70 font-semibold">
+            End Date (Optional)
+          </label>
+          <input
+            type="date"
+            value={end}
+            onChange={(event) => setEnd(event.target.value)}
+            className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
+              isDark
+                ? "bg-[#0a0e18] text-on-surface border border-white/10"
+                : "bg-white/90 text-text-obsidian border border-slate-200"
+            }`}
+          />
+        </div>
+
+        <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-2">
+          <button
+            className="liquid-button px-6 py-3 rounded-xl font-headline-sm text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-primary-container dark:to-primary-fixed dark:text-on-primary-container shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-2"
+            type="submit"
+            disabled={!symbol || mutation.isPending || analysisMutation.isPending}
+          >
+            <span className="material-symbols-outlined text-[18px]">bolt</span>
+            <span>{mutation.isPending ? "Executing Backtest..." : "Run backtest"}</span>
+          </button>
+        </div>
       </form>
 
-      {mutation.isError && <p className="error">Backtest failed: {mutation.error.message}</p>}
-      {analysisMutation.isError && <p className="error">Reliability analysis failed: {analysisMutation.error.message}</p>}
+      {mutation.isError && (
+        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 text-xs">
+          Backtest failed: {mutation.error.message}
+        </div>
+      )}
+      {analysisMutation.isError && (
+        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 text-xs">
+          Reliability analysis failed: {analysisMutation.error.message}
+        </div>
+      )}
 
+      {/* Backtest Results */}
       {result && (
-        <div className="backtest-results">
-          <div className="metric-grid result-grid">
-            <Metric label="Strategy return" value={percent(result.metrics.total_return)} hint={`Buy & hold: ${percent(result.benchmark_metrics.total_return)}`} />
-            <Metric label="Sharpe ratio" value={result.metrics.sharpe.toFixed(2)} hint="Return per unit of volatility" />
-            <Metric label="Max drawdown" value={percent(result.metrics.max_drawdown)} hint={`Benchmark: ${percent(result.benchmark_metrics.max_drawdown)}`} />
-            <Metric label="Cost drag" value={percent(result.metrics.cost_drag)} hint={`${result.metrics.trade_count} position changes`} />
+        <div className="flex flex-col gap-6 pt-4 border-t border-slate-200/60 dark:border-white/10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Metric
+              label="Strategy Return"
+              value={percent(result.metrics.total_return)}
+              hint={`Buy & hold: ${percent(result.benchmark_metrics.total_return)}`}
+              isDark={isDark}
+              isPositive={result.metrics.total_return >= 0}
+            />
+            <Metric
+              label="Sharpe Ratio"
+              value={result.metrics.sharpe.toFixed(2)}
+              hint="Return per unit volatility"
+              isDark={isDark}
+            />
+            <Metric
+              label="Max Drawdown"
+              value={percent(result.metrics.max_drawdown)}
+              hint={`Benchmark: ${percent(result.benchmark_metrics.max_drawdown)}`}
+              isDark={isDark}
+              isPositive={false}
+            />
+            <Metric
+              label="Cost Drag"
+              value={percent(result.metrics.cost_drag)}
+              hint={`${result.metrics.trade_count} position changes`}
+              isDark={isDark}
+            />
           </div>
-          <div className="panel-heading"><div><h3>Equity curve vs buy-and-hold</h3><p className="muted">Showing the latest 365 available sessions from {result.period_start} to {result.period_end}.</p></div></div>
-          <EquityChart data={curve} />
-          <div className="trade-log"><h3>Trade log</h3><div className="table-scroll"><table><thead><tr><th>Date</th><th>Action</th><th>Price</th><th>Turnover</th><th>Cost</th></tr></thead><tbody>{result.trades.slice(-10).map((trade) => <tr key={`${trade.date}-${trade.action}`}><td>{trade.date}</td><td className={trade.action === "BUY" ? "positive" : "negative"}>{trade.action}</td><td>{money(trade.price)}</td><td>{trade.turnover.toFixed(2)}×</td><td>{money(trade.cost)}</td></tr>)}</tbody></table></div></div>
+
+          {/* Equity Chart vs Buy-and-Hold */}
+          <div className="dynamic-subcard p-4 sm:p-5 flex flex-col gap-2">
+            <div>
+              <h4 className={`text-base sm:text-lg font-bold ${isDark ? "text-on-surface" : "text-text-obsidian"}`}>
+                Equity curve vs buy-and-hold
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-on-surface-variant">
+                Showing latest 365 available sessions from {result.period_start} to {result.period_end}.
+              </p>
+            </div>
+            <EquityChart data={curve} theme={theme} />
+          </div>
+
+          {/* Trade Log Table */}
+          <div className="dynamic-subcard p-4 sm:p-5 flex flex-col gap-2">
+            <h4 className={`text-base sm:text-lg font-bold ${isDark ? "text-on-surface" : "text-text-obsidian"}`}>
+              Trade log (Latest 10 executions)
+            </h4>
+            <div className="overflow-x-auto scrollbar-none">
+              <table className="w-full text-xs text-left border-collapse liquid-table">
+                <thead>
+                  <tr className="border-b border-slate-200/60 dark:border-white/10 opacity-70 text-[10px] uppercase font-label-caps">
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Action</th>
+                    <th className="py-2.5 px-3">Price</th>
+                    <th className="py-2.5 px-3">Turnover</th>
+                    <th className="py-2.5 px-3">Cost</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 font-code-sm text-[11px]">
+                  {result.trades.slice(-10).map((trade) => (
+                    <tr key={`${trade.date}-${trade.action}`}>
+                      <td className="py-2.5 px-3 font-medium">{trade.date}</td>
+                      <td
+                        className={`py-2.5 px-3 font-bold ${
+                          trade.action === "BUY"
+                            ? "text-emerald-600 dark:text-primary-container"
+                            : "text-rose-500"
+                        }`}
+                      >
+                        {trade.action}
+                      </td>
+                      <td className="py-2.5 px-3 font-medium">${money(trade.price)}</td>
+                      <td className="py-2.5 px-3 opacity-80">{trade.turnover.toFixed(2)}×</td>
+                      <td className="py-2.5 px-3 opacity-80">${money(trade.cost)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Analysis & Explanation Panels */}
           {analysisMutation.data && (
             <>
-              <AnalysisPanel analysis={analysisMutation.data} />
-              <ExplanationPanel analysis={analysisMutation.data} />
+              <AnalysisPanel analysis={analysisMutation.data} theme={theme} />
+              <ExplanationPanel analysis={analysisMutation.data} theme={theme} />
             </>
           )}
         </div>

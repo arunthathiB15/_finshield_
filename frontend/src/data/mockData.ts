@@ -338,3 +338,87 @@ export const DEFAULT_ASSETS: Record<string, AssetTelemetry> = {
     },
   },
 };
+
+export const DEFAULT_ASSET_SUMMARIES = [
+  {
+    symbol: "GC=F",
+    name: "Gold Continuous Futures",
+    source: "DuckDB In-Sample",
+    start_date: "2018-01-02",
+    end_date: "2024-01-02",
+    rows: 1512,
+    last_close: 2063.4,
+    total_return: 1.244,
+    annualized_volatility: 0.126,
+    periods_per_year: 252,
+    missing_days: 0,
+    quality_status: "optimal",
+  },
+  {
+    symbol: "BTC-USD",
+    name: "Bitcoin / USD Spot",
+    source: "DuckDB In-Sample",
+    start_date: "2018-01-02",
+    end_date: "2024-01-02",
+    rows: 2191,
+    last_close: 44120.0,
+    total_return: 3.214,
+    annualized_volatility: 0.448,
+    periods_per_year: 365,
+    missing_days: 0,
+    quality_status: "optimal",
+  },
+  {
+    symbol: "NVDA",
+    name: "NVIDIA Corp",
+    source: "DuckDB In-Sample",
+    start_date: "2018-01-02",
+    end_date: "2024-01-02",
+    rows: 1512,
+    last_close: 495.22,
+    total_return: 4.714,
+    annualized_volatility: 0.382,
+    periods_per_year: 252,
+    missing_days: 0,
+    quality_status: "optimal",
+  },
+];
+
+export function generateMockSeries(symbol: string) {
+  const basePrice = symbol === "BTC-USD" ? 30000 : symbol === "NVDA" ? 320 : 1800;
+  const points = [];
+  const now = new Date("2024-01-02T00:00:00Z");
+
+  let current = basePrice;
+  const prices: number[] = [];
+
+  for (let i = 365; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = d.toISOString().slice(0, 10);
+    // realistic gentle random walk
+    const change = (Math.sin(i / 15) * 0.015 + (Math.random() - 0.48) * 0.02);
+    current = current * (1 + change);
+    prices.push(current);
+
+    const slice20 = prices.slice(Math.max(0, prices.length - 20));
+    const sma_20 = slice20.reduce((a, b) => a + b, 0) / slice20.length;
+    const ema_20 = prices.length === 1 ? current : (current * 0.1 + (prices[prices.length - 2] || current) * 0.9);
+
+    points.push({
+      date: dateStr,
+      open: current * 0.995,
+      high: current * 1.01,
+      low: current * 0.99,
+      close: current,
+      adj_close: current,
+      volume: 1000000 + Math.floor(Math.random() * 500000),
+      sma_20: prices.length >= 5 ? sma_20 : null,
+      ema_20: prices.length >= 5 ? ema_20 : null,
+      rolling_volatility: 0.18,
+      drawdown: -0.04,
+    });
+  }
+
+  return points;
+}
+
