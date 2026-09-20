@@ -5,6 +5,8 @@ import type {
   AssetSummary,
   BacktestRequest,
   BacktestResponse,
+  ChatRequest,
+  ChatResponse,
   CorrelationAnalysis,
   ExplanationRequest,
   ExplanationResponse,
@@ -93,4 +95,17 @@ export async function explainAnalysis(payload: ExplanationRequest): Promise<Expl
     throw await responseError(response, `Finshield API returned ${response.status}`);
   }
   return response.json() as Promise<ExplanationResponse>;
+}
+
+
+export async function askChat(payload: ChatRequest): Promise<ChatResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw await responseError(response, `Finshield API returned ${response.status}`);
+  }
+  return response.json() as Promise<ChatResponse>;
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getAssets, getCorrelationAnalysis, getMarketNews } from "./api/client";
 import { Header } from "./components/Header";
@@ -10,7 +10,7 @@ import { CorrelationPanel } from "./components/CorrelationPanel";
 import { HelpDeskChatbot } from "./components/HelpDeskChatbot";
 import { MarketNewsPanel } from "./components/MarketNewsPanel";
 import { useAssetSeries } from "./hooks/useAssetSeries";
-import type { AssetSummary, SeriesPoint, ThemeMode } from "./types";
+import type { AssetSummary, ChatContext, SeriesPoint, ThemeMode } from "./types";
 
 function percent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
@@ -50,6 +50,16 @@ export default function App() {
   const isDark = theme === "dark";
   const [symbol, setSymbol] = useState("NVDA");
   const [newsRefreshNonce, setNewsRefreshNonce] = useState(0);
+  const [strategyChatContext, setStrategyChatContext] = useState<
+    Pick<ChatContext, "backtest" | "analysis">
+  >({ backtest: null, analysis: null });
+
+  const handleStrategyContextChange = useCallback(
+    (context: Pick<ChatContext, "backtest" | "analysis">) => {
+      setStrategyChatContext(context);
+    },
+    [],
+  );
 
   // Keep the document theme class in sync with the fixed FinShield palette.
   useEffect(() => {
@@ -316,6 +326,7 @@ export default function App() {
           assets={availableAssets}
           symbol={symbol}
           onSymbolChange={setSymbol}
+          onContextChange={handleStrategyContextChange}
           theme={theme}
         />
 
@@ -325,7 +336,15 @@ export default function App() {
         </footer>
       </main>
 
-      <HelpDeskChatbot />
+      <HelpDeskChatbot
+        context={{
+          selected_asset: selectedAsset ?? null,
+          latest_observation: latestPoint ?? null,
+          correlation: correlationQuery.data ?? null,
+          news: newsQuery.data ?? null,
+          ...strategyChatContext,
+        }}
+      />
     </div>
   );
 }

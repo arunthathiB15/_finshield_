@@ -1,60 +1,51 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
-type HelpDeskQuestion = {
-  question: string;
-  answer: string;
+import { askChat } from "../api/client";
+import type { ChatContext, ChatResponse, ChatTurn } from "../types";
+
+type HelpDeskChatbotProps = {
+  context?: ChatContext;
 };
 
-const PRELOADED_QUESTIONS: HelpDeskQuestion[] = [
-  {
-    question: "What is FinShield?",
-    answer:
-      "FinShield is a trust-first research dashboard. It loads validated historical market data, runs deterministic backtests, and presents the risk and reliability evidence before you interpret a strategy.",
-  },
-  {
-    question: "Does FinShield predict prices?",
-    answer:
-      "No. The quant engine calculates historical metrics deterministically. The explanation layer only turns those computed results into plain language; it does not predict prices or invent numbers.",
-  },
-  {
-    question: "What does the Trust Score mean?",
-    answer:
-      "The Trust Score is a validation summary. It combines evidence such as out-of-sample behavior, risk, costs, and stability. It is not a guarantee of future returns.",
-  },
-  {
-    question: "What is in the metadata download?",
-    answer:
-      "The JSON file includes the selected asset summary, data range, row and quality counts, calculated overview values, the export timestamp, and the latest validated observation.",
-  },
-  {
-    question: "How does Featherless AI fit in?",
-    answer:
-      "Featherless runs server-side through FastAPI only for natural-language explanations of computed analysis. If it is unavailable or the model is gated, FinShield uses its deterministic fallback explanation.",
-  },
-  {
-    question: "Is this financial advice?",
-    answer:
-      "No. This dashboard is for research and educational analysis. Historical results do not guarantee future performance, and you should not treat the output as financial advice.",
-  },
-  {
-    question: "Can the MVP be completed in 30 minutes?",
-    answer:
-      "Yes, the metadata download and this preloaded help desk fit within a focused 30-minute MVP. A production chatbot with authentication, ticket creation, storage, and human support would need additional time.",
-  },
-];
+type DisplayMessage = ChatTurn & {
+  source?: ChatResponse["source"];
+  model?: string | null;
+};
 
-export function HelpDeskChatbot() {
+const WELCOME_MESSAGE: DisplayMessage = {
+  role: "assistant",
+  content:
+    "I’m the FinShield project assistant. Ask me about the datasets, formulas, SMA strategy, backtest results, risk metrics, dates, correlation, news, or Featherless integration.",
+};
+
+export function HelpDeskChatbot({ context = {} }: HelpDeskChatbotProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<HelpDeskQuestion | null>(null);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<DisplayMessage[]>([WELCOME_MESSAGE]);
+  const mutation = useMutation<ChatResponse, Error, { question: string; history: ChatTurn[]; context: Record<string, unknown> }>({
+    mutationFn: askChat,
+  });
+
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = question.trim();
+    if (!trimmed || mutation.isPending) return;
+
+    const history = messages.slice(-8).map(({ role, content }) => ({ role, content }));
+    setMessages((current) => [...current, { role: "user", content: trimmed }]);
+    setQuestion("");
+    mutation.mutate({ question: trimmed, history, context });
+  }
 
   return (
     <aside className={`helpdesk ${isOpen ? "is-open" : ""}`} aria-label="FinShield help desk">
       {isOpen && (
-        <section className="helpdesk-panel" aria-label="Preloaded FinShield questions">
+        <section className="helpdesk-panel" aria-label="FinShield AI help desk">
           <header className="helpdesk-panel-header">
             <div>
               <span className="helpdesk-kicker">FINSHIELD HELP DESK</span>
-              <h2>How can we help?</h2>
+              <h2>Ask about the project</h2>
             </div>
             <button
               className="helpdesk-close"
@@ -69,40 +60,56 @@ export function HelpDeskChatbot() {
           </header>
 
           <div className="helpdesk-content">
-            <div className="helpdesk-message helpdesk-message-bot">
-              Choose a question below and I’ll explain how this build works.
+            <div className="helpdesk-thread" aria-live="polite">
+              {messages.map((message, index) => (
+                <div
+                  className={`helpdesk-message ${
+                    message.role === "user" ? "helpdesk-message-user" : "helpdesk-message-bot"
+                  }`}
+                  key={`${message.role}-${index}`}
+                >
+                  {message.content}
+                  {message.source && (
+                    <small className="helpdesk-message-meta">
+                      {message.source === "featherless"
+                        ? `Featherless${message.model ? ` · ${message.model}` : ""}`
+                        : "Fallback response"}
+                    </small>
+                  )}
+                </div>
+              ))}
+              {mutation.isPending && (
+                <div className="helpdesk-message helpdesk-message-bot helpdesk-typing">
+                  Thinking from the project context…
+                </div>
+              )}
             </div>
 
-            {selectedQuestion && (
-              <>
-                <div className="helpdesk-message helpdesk-message-user">
-                  {selectedQuestion.question}
-                </div>
-                <div className="helpdesk-message helpdesk-message-bot">
-                  {selectedQuestion.answer}
-                </div>
-              </>
+            {mutation.isError && (
+              <p className="helpdesk-error" role="alert">
+                Chat request failed: {mutation.error.message}
+              </p>
             )}
 
-            <div className="helpdesk-question-list">
-              {PRELOADED_QUESTIONS.map((item) => (
-                <button
-                  className="helpdesk-question"
-                  type="button"
-                  key={item.question}
-                  onClick={() => setSelectedQuestion(item)}
-                >
-                  {item.question}
-                  <span className="material-symbols-outlined" aria-hidden="true">
-                    arrow_forward
-                  </span>
+            <form className="helpdesk-composer" onSubmit={submit}>
+              <textarea
+                rows={3}
+                maxLength={1000}
+                value={question}
+                onChange={(event) => setQuestion(event.target.value)}
+                placeholder="Ask anything about FinShield…"
+                aria-label="Ask the FinShield project assistant"
+              />
+              <div className="helpdesk-composer-footer">
+                <span className="helpdesk-note">
+                  Server-side AI uses validated project context. API keys stay in FastAPI.
+                </span>
+                <button className="helpdesk-send" type="submit" disabled={!question.trim() || mutation.isPending}>
+                  <span className="material-symbols-outlined" aria-hidden="true">send</span>
+                  Ask
                 </button>
-              ))}
-            </div>
-
-            <p className="helpdesk-note">
-              Preloaded answers only. No market values or API keys are sent from this widget.
-            </p>
+              </div>
+            </form>
           </div>
         </section>
       )}

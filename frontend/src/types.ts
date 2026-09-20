@@ -82,6 +82,49 @@ export type NewsResponse = {
   warning: string | null;
 };
 
+export type ChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type ChatRequest = {
+  question: string;
+  history: ChatTurn[];
+  context: Record<string, unknown>;
+};
+
+export type ChatResponse = {
+  answer: string;
+  source: "featherless" | "deterministic_fallback";
+  model: string | null;
+  notice: string | null;
+  disclaimer: string;
+};
+
+export type ChatBacktestContext = {
+  symbol: string;
+  strategy: string;
+  parameters: BacktestResponse["parameters"];
+  capital: number;
+  transaction_cost: number;
+  slippage: number;
+  periods_per_year: number;
+  period_start: string;
+  period_end: string;
+  metrics: BacktestMetrics;
+  benchmark_metrics: BacktestMetrics;
+  trade_count: number;
+};
+
+export type ChatContext = {
+  selected_asset?: AssetSummary | null;
+  latest_observation?: SeriesPoint | null;
+  correlation?: CorrelationAnalysis | null;
+  news?: NewsResponse | null;
+  backtest?: ChatBacktestContext | null;
+  analysis?: AnalysisResponse | null;
+};
+
 export type BacktestRequest = {
   symbol: string;
   strategy: string;

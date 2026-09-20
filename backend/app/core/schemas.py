@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -240,6 +240,25 @@ class ExplanationRequest(BaseModel):
 
 class ExplanationResponse(BaseModel):
     explanation: str = Field(min_length=1)
+    source: Literal["featherless", "deterministic_fallback"]
+    model: str | None = None
+    notice: str | None = None
+    disclaimer: str
+
+
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class ChatRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+    context: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatResponse(BaseModel):
+    answer: str = Field(min_length=1)
     source: Literal["featherless", "deterministic_fallback"]
     model: str | None = None
     notice: str | None = None

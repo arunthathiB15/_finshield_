@@ -8,6 +8,8 @@ import type {
   AssetSummary,
   BacktestRequest,
   BacktestResponse,
+  ChatBacktestContext,
+  ChatContext,
   ThemeMode,
 } from "../types";
 import { AnalysisPanel } from "./AnalysisPanel";
@@ -19,6 +21,7 @@ type StrategyLabProps = {
   assets: AssetSummary[];
   symbol: string;
   onSymbolChange: (symbol: string) => void;
+  onContextChange?: (context: Pick<ChatContext, "backtest" | "analysis">) => void;
   theme?: ThemeMode;
 };
 
@@ -28,6 +31,23 @@ function percent(value: number): string {
 
 function money(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+function toChatBacktestContext(result: BacktestResponse): ChatBacktestContext {
+  return {
+    symbol: result.symbol,
+    strategy: result.strategy,
+    parameters: result.parameters,
+    capital: result.capital,
+    transaction_cost: result.transaction_cost,
+    slippage: result.slippage,
+    periods_per_year: result.periods_per_year,
+    period_start: result.period_start,
+    period_end: result.period_end,
+    metrics: result.metrics,
+    benchmark_metrics: result.benchmark_metrics,
+    trade_count: result.trades.length,
+  };
 }
 
 function Metric({
@@ -74,6 +94,7 @@ export function StrategyLab({
   assets,
   symbol,
   onSymbolChange,
+  onContextChange,
   theme = "light",
 }: StrategyLabProps) {
   const [capital, setCapital] = useState("100000");
@@ -96,6 +117,7 @@ export function StrategyLab({
     mutationFn: runAnalysis,
   });
   const previousSymbol = useRef(symbol);
+  const result = mutation.data;
 
   useEffect(() => {
     if (previousSymbol.current === symbol) return;
@@ -107,6 +129,13 @@ export function StrategyLab({
     setFormError("");
     setAnalysisNotice("");
   }, [symbol]);
+
+  useEffect(() => {
+    onContextChange?.({
+      backtest: result ? toChatBacktestContext(result) : null,
+      analysis: analysisMutation.data ?? null,
+    });
+  }, [analysisMutation.data, onContextChange, result]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,7 +207,6 @@ export function StrategyLab({
     });
   }
 
-  const result = mutation.data;
   const curve = result?.equity_curve.slice(-365) ?? [];
 
   return (
