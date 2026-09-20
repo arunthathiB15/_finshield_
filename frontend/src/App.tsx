@@ -49,6 +49,7 @@ export default function App() {
   const theme: ThemeMode = "dark";
   const isDark = theme === "dark";
   const [symbol, setSymbol] = useState("NVDA");
+  const [newsRefreshNonce, setNewsRefreshNonce] = useState(0);
 
   // Keep the document theme class in sync with the fixed FinShield palette.
   useEffect(() => {
@@ -91,12 +92,11 @@ export default function App() {
     retry: 1,
   });
   const newsQuery = useQuery({
-    queryKey: ["market-news", symbol],
-    queryFn: () => getMarketNews(symbol),
+    queryKey: ["market-news", symbol, newsRefreshNonce],
+    queryFn: () => getMarketNews(symbol, 12, newsRefreshNonce > 0),
     enabled: Boolean(symbol),
     staleTime: 5 * 60_000,
-    refetchInterval: 5 * 60_000,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     retry: 1,
   });
 
@@ -307,7 +307,7 @@ export default function App() {
           isLoading={newsQuery.isLoading}
           isFetching={newsQuery.isFetching}
           isError={newsQuery.isError}
-          onRefresh={() => newsQuery.refetch()}
+          onRefresh={() => setNewsRefreshNonce((value) => value + 1)}
           theme={theme}
         />
 

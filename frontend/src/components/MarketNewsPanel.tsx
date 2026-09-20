@@ -65,13 +65,13 @@ export function MarketNewsPanel({
       <div className="news-header-row">
         <div>
           <div className="text-[11px] font-extrabold tracking-widest uppercase text-blue-600 dark:text-primary-container">
-            LIVE MARKET NEWS
+            MARKET NEWS
           </div>
           <h3 className={`text-xl sm:text-2xl font-bold tracking-tight mt-1 ${isDark ? "text-on-surface" : "text-text-obsidian"}`}>
             Market and finance headlines
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-on-surface-variant max-w-3xl">
-            Current headlines for {data?.asset_name ?? "the selected asset"} and the broader stock market. The feed refreshes automatically every five minutes.
+            Headlines for {data?.asset_name ?? "the selected asset"} and the broader stock market. Click Refresh news to check for newer stories.
           </p>
         </div>
         <button className="news-refresh-button" type="button" onClick={onRefresh} disabled={isFetching}>
@@ -84,8 +84,8 @@ export function MarketNewsPanel({
 
       {data && (
         <div className="news-status-row">
-          <span className="news-live-indicator"><span /> LIVE FEED</span>
-          <span>Last checked {formatPublishedAt(data.fetched_at)}</span>
+          <span className="news-feed-indicator"><span /> NEWS FEED</span>
+          <span>Updated {formatPublishedAt(data.fetched_at)}</span>
           <span>Source: {data.source}</span>
         </div>
       )}
@@ -93,7 +93,7 @@ export function MarketNewsPanel({
       {isLoading && <p className="empty-panel">Loading current market headlines…</p>}
       {isError && (
         <p className="error-panel">
-          The live news feed is unavailable right now. The analytics dashboard is still usable; try Refresh news again.
+          No headlines are available right now. Click Refresh news to try again.
         </p>
       )}
       {data?.warning && <p className="news-warning">{data.warning}</p>}
@@ -105,7 +105,7 @@ export function MarketNewsPanel({
       )}
 
       {data && !data.items.length && !isLoading && (
-        <p className="empty-panel">No current headlines were returned for this refresh.</p>
+        <p className="empty-panel">No headlines are available yet. Click Refresh news to try again.</p>
       )}
     </section>
   );

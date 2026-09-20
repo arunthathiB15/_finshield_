@@ -33,9 +33,13 @@ export function getCorrelationAnalysis(): Promise<CorrelationAnalysis> {
   return request<CorrelationAnalysis>("/api/analysis/correlation");
 }
 
-export function getMarketNews(symbol: string, limit = 12): Promise<NewsResponse> {
+export function getMarketNews(
+  symbol: string,
+  limit = 12,
+  forceRefresh = false,
+): Promise<NewsResponse> {
   return request<NewsResponse>(
-    `/api/news?symbol=${encodeURIComponent(symbol)}&limit=${limit}`,
+    `/api/news?symbol=${encodeURIComponent(symbol)}&limit=${limit}&refresh=${forceRefresh}`,
   );
 }
 

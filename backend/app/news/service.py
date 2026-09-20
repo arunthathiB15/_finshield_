@@ -2,22 +2,29 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from hashlib import sha1
+from html import unescape
+import re
 from threading import Lock
 from time import monotonic
 from typing import Any
+import xml.etree.ElementTree as ET
 
+import httpx
 import yfinance as yf
 
 from backend.app.core.schemas import NewsArticle, NewsResponse
 from backend.app.data.loader import ASSET_NAMES
 
 
-NEWS_SOURCE = "Yahoo Finance public search feed via yfinance"
+YAHOO_SOURCE = "Yahoo Finance search"
+RSS_SOURCE = "Google News RSS fallback"
 MARKET_QUERY = "stock market finance"
 NEWS_REFRESH_SECONDS = 300
-_CACHE: dict[str, tuple[float, datetime, list[NewsArticle], str | None]] = {}
+_CACHE: dict[str, tuple[float, datetime, list[NewsArticle], str | None, str]] = {}
 _CACHE_LOCK = Lock()
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _nested_text(value: Any) -> str | None:
@@ -63,9 +70,20 @@ def _published_at(value: Any) -> datetime | None:
         try:
             parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
         except ValueError:
-            return None
+            try:
+                parsed = parsedate_to_datetime(value.strip())
+            except (TypeError, ValueError, OverflowError):
+                return None
         return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
     return None
+
+
+def _plain_text(value: str | None) -> str | None:
+    if not value:
+        return None
+    cleaned = unescape(_HTML_TAG_RE.sub(" ", value))
+    cleaned = " ".join(cleaned.split())
+    return cleaned or None
 
 
 def _normalise_article(raw: dict[str, Any], category: str) -> NewsArticle | None:
@@ -92,7 +110,7 @@ def _normalise_article(raw: dict[str, Any], category: str) -> NewsArticle | None
     article_id = str(raw.get("uuid") or content.get("id") or "")
     if not article_id:
         article_id = sha1(f"{title}|{link}".encode("utf-8")).hexdigest()
-    summary = (
+    summary = _plain_text(
         _nested_text(content.get("summary"))
         or _nested_text(content.get("description"))
         or _nested_text(raw.get("summary"))
@@ -109,7 +127,43 @@ def _normalise_article(raw: dict[str, Any], category: str) -> NewsArticle | None
     )
 
 
-def _fetch_query(query: str, category: str, news_count: int) -> tuple[list[NewsArticle], str | None]:
+def _fetch_rss_query(query: str, category: str, news_count: int) -> tuple[list[NewsArticle], str | None]:
+    """Read a public RSS search feed when Yahoo search returns no articles."""
+
+    try:
+        response = httpx.get(
+            "https://news.google.com/rss/search",
+            params={"q": query, "hl": "en-US", "gl": "US", "ceid": "US:en"},
+            headers={"User-Agent": "FinShield/0.1 market-news-reader"},
+            timeout=10,
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+        articles: list[NewsArticle] = []
+        for item in root.iter():
+            if item.tag.rsplit("}", 1)[-1] != "item":
+                continue
+            raw: dict[str, Any] = {}
+            for child in list(item):
+                key = child.tag.rsplit("}", 1)[-1]
+                if key == "source":
+                    raw["publisher"] = child.text
+                else:
+                    raw[key] = child.text
+            article = _normalise_article(raw, category)
+            if article is not None:
+                articles.append(article)
+            if len(articles) >= news_count:
+                break
+        return articles, None if articles else "RSS news returned no headlines."
+    except Exception:
+        return [], f"{category.capitalize()} news is temporarily unavailable."
+
+
+def _fetch_query(
+    query: str, category: str, news_count: int
+) -> tuple[list[NewsArticle], str | None, str]:
     try:
         search = yf.Search(
             query,
@@ -125,10 +179,16 @@ def _fetch_query(query: str, category: str, news_count: int) -> tuple[list[NewsA
             for article in [_normalise_article(raw, category)]
             if article is not None
         ]
-        return articles, None
+        if articles:
+            return articles, None, YAHOO_SOURCE
     except Exception:
-        # Provider outages and rate limits should not break the quant dashboard.
-        return [], f"{category.capitalize()} news is temporarily unavailable."
+        pass
+
+    rss_articles, rss_warning = _fetch_rss_query(query, category, news_count)
+    if rss_articles:
+        return rss_articles, None, RSS_SOURCE
+    # Provider outages and rate limits should not break the quant dashboard.
+    return [], rss_warning or f"{category.capitalize()} news is temporarily unavailable.", RSS_SOURCE
 
 
 def _merge_articles(asset_articles: list[NewsArticle], market_articles: list[NewsArticle], limit: int) -> list[NewsArticle]:
@@ -145,39 +205,45 @@ def _merge_articles(asset_articles: list[NewsArticle], market_articles: list[New
     return sorted(unique.values(), key=lambda item: item.published_at, reverse=True)[:limit]
 
 
-def fetch_market_news(symbol: str, limit: int = 12) -> NewsResponse:
+def fetch_market_news(symbol: str, limit: int = 12, force_refresh: bool = False) -> NewsResponse:
     now = monotonic()
     with _CACHE_LOCK:
         cached = _CACHE.get(symbol)
-    if cached and now - cached[0] < NEWS_REFRESH_SECONDS:
-        fetched_at, articles, warning = cached[1], cached[2], cached[3]
+    if cached and not force_refresh and now - cached[0] < NEWS_REFRESH_SECONDS:
+        fetched_at, articles, warning, source = cached[1], cached[2], cached[3], cached[4]
         return NewsResponse(
             symbol=symbol,
             asset_name=ASSET_NAMES[symbol],
-            source=NEWS_SOURCE,
+            source=source,
             fetched_at=fetched_at,
             refresh_interval_seconds=NEWS_REFRESH_SECONDS,
             items=articles[:limit],
             warning=warning,
         )
 
-    results: dict[str, tuple[list[NewsArticle], str | None]] = {}
+    results: dict[str, tuple[list[NewsArticle], str | None, str]] = {}
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {
-            executor.submit(_fetch_query, symbol, "asset", 8): "asset",
+            executor.submit(_fetch_query, f"{symbol} {ASSET_NAMES[symbol]}", "asset", 8): "asset",
             executor.submit(_fetch_query, MARKET_QUERY, "market", 8): "market",
         }
         for future in as_completed(futures):
             results[futures[future]] = future.result()
 
-    asset_articles, asset_warning = results.get("asset", ([], "Asset news is temporarily unavailable."))
-    market_articles, market_warning = results.get("market", ([], "Market news is temporarily unavailable."))
+    asset_articles, asset_warning, asset_source = results.get(
+        "asset", ([], "Asset news is temporarily unavailable.", RSS_SOURCE)
+    )
+    market_articles, market_warning, market_source = results.get(
+        "market", ([], "Market news is temporarily unavailable.", RSS_SOURCE)
+    )
     articles = _merge_articles(asset_articles, market_articles, limit)
     warnings = [warning for warning in (asset_warning, market_warning) if warning]
     warning = " ".join(warnings) if warnings else None
     if not articles and warning is None:
         warning = "No current headlines were returned by the news provider."
 
+    sources = {asset_source, market_source}
+    source = next(iter(sources)) if len(sources) == 1 else f"{YAHOO_SOURCE} + {RSS_SOURCE}"
     fetched_at = datetime.now(timezone.utc)
     with _CACHE_LOCK:
         _CACHE[symbol] = (
@@ -185,12 +251,13 @@ def fetch_market_news(symbol: str, limit: int = 12) -> NewsResponse:
             fetched_at,
             _merge_articles(asset_articles, market_articles, 20),
             warning,
+            source,
         )
 
     return NewsResponse(
         symbol=symbol,
         asset_name=ASSET_NAMES[symbol],
-        source=NEWS_SOURCE,
+        source=source,
         fetched_at=fetched_at,
         refresh_interval_seconds=NEWS_REFRESH_SECONDS,
         items=articles,

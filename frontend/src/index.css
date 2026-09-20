@@ -408,7 +408,7 @@ footer { color: var(--color-muted); }
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
 }
-.news-live-indicator {
+.news-feed-indicator {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -416,7 +416,7 @@ footer { color: var(--color-muted); }
   font-weight: 800;
   letter-spacing: .08em;
 }
-.news-live-indicator span {
+.news-feed-indicator span {
   width: 7px;
   height: 7px;
   border-radius: 50%;
