@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { getAssets, getCorrelationAnalysis } from "./api/client";
+import { getAssets, getCorrelationAnalysis, getMarketNews } from "./api/client";
 import { Header } from "./components/Header";
 import { PriceChart } from "./components/PriceChart";
 import { StrategyLab } from "./components/StrategyLab";
 import { AssetSelector } from "./components/AssetSelector";
 import { CorrelationPanel } from "./components/CorrelationPanel";
 import { HelpDeskChatbot } from "./components/HelpDeskChatbot";
+import { MarketNewsPanel } from "./components/MarketNewsPanel";
 import { useAssetSeries } from "./hooks/useAssetSeries";
 import type { AssetSummary, SeriesPoint, ThemeMode } from "./types";
 
@@ -87,6 +88,15 @@ export default function App() {
     queryKey: ["correlation-analysis"],
     queryFn: getCorrelationAnalysis,
     staleTime: 60_000,
+    retry: 1,
+  });
+  const newsQuery = useQuery({
+    queryKey: ["market-news", symbol],
+    queryFn: () => getMarketNews(symbol),
+    enabled: Boolean(symbol),
+    staleTime: 5 * 60_000,
+    refetchInterval: 5 * 60_000,
+    refetchOnWindowFocus: true,
     retry: 1,
   });
 
@@ -289,6 +299,15 @@ export default function App() {
           data={correlationQuery.data}
           isLoading={correlationQuery.isLoading}
           isError={correlationQuery.isError}
+          theme={theme}
+        />
+
+        <MarketNewsPanel
+          data={newsQuery.data}
+          isLoading={newsQuery.isLoading}
+          isFetching={newsQuery.isFetching}
+          isError={newsQuery.isError}
+          onRefresh={() => newsQuery.refetch()}
           theme={theme}
         />
 

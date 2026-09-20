@@ -61,6 +61,27 @@ export type CorrelationAnalysis = {
   method: string;
 };
 
+export type NewsArticle = {
+  id: string;
+  title: string;
+  publisher: string;
+  link: string;
+  published_at: string;
+  category: "asset" | "market";
+  thumbnail_url: string | null;
+  summary: string | null;
+};
+
+export type NewsResponse = {
+  symbol: string;
+  asset_name: string;
+  source: string;
+  fetched_at: string;
+  refresh_interval_seconds: number;
+  items: NewsArticle[];
+  warning: string | null;
+};
+
 export type BacktestRequest = {
   symbol: string;
   strategy: string;

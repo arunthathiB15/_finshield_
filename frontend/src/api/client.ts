@@ -8,6 +8,7 @@ import type {
   CorrelationAnalysis,
   ExplanationRequest,
   ExplanationResponse,
+  NewsResponse,
 } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -30,6 +31,12 @@ export function getAssetSeries(symbol: string): Promise<AssetSeries> {
 
 export function getCorrelationAnalysis(): Promise<CorrelationAnalysis> {
   return request<CorrelationAnalysis>("/api/analysis/correlation");
+}
+
+export function getMarketNews(symbol: string, limit = 12): Promise<NewsResponse> {
+  return request<NewsResponse>(
+    `/api/news?symbol=${encodeURIComponent(symbol)}&limit=${limit}`,
+  );
 }
 
 export async function runBacktest(payload: BacktestRequest): Promise<BacktestResponse> {

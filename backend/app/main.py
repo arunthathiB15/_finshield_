@@ -8,6 +8,7 @@ from backend.app.api.routes.analysis import router as analysis_router
 from backend.app.api.routes.backtest import router as backtest_router
 from backend.app.api.routes.correlation import router as correlation_router
 from backend.app.api.routes.explanation import router as explanation_router
+from backend.app.api.routes.news import router as news_router
 from backend.app.core.config import settings
 from backend.app.data.loader import load_seed_data
 from backend.app.data.store import MarketDataStore
@@ -41,6 +42,7 @@ app.include_router(backtest_router)
 app.include_router(analysis_router)
 app.include_router(correlation_router)
 app.include_router(explanation_router)
+app.include_router(news_router)
 
 
 @app.get("/health")

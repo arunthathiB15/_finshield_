@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from typing import Literal
 
@@ -59,6 +59,27 @@ class CorrelationResponse(BaseModel):
     matrix: dict[str, dict[str, float]]
     pairs: list[CorrelationPair]
     method: str
+
+
+class NewsArticle(BaseModel):
+    id: str
+    title: str
+    publisher: str
+    link: str
+    published_at: datetime
+    category: Literal["asset", "market"]
+    thumbnail_url: str | None = None
+    summary: str | None = None
+
+
+class NewsResponse(BaseModel):
+    symbol: str
+    asset_name: str
+    source: str
+    fetched_at: datetime
+    refresh_interval_seconds: int = Field(default=300, ge=60)
+    items: list[NewsArticle]
+    warning: str | None = None
 
 
 class BacktestPeriod(BaseModel):
