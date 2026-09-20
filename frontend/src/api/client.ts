@@ -5,6 +5,7 @@ import type {
   AssetSummary,
   BacktestRequest,
   BacktestResponse,
+  CorrelationAnalysis,
   ExplanationRequest,
   ExplanationResponse,
 } from "../types";
@@ -25,6 +26,10 @@ export function getAssets(): Promise<AssetSummary[]> {
 
 export function getAssetSeries(symbol: string): Promise<AssetSeries> {
   return request<AssetSeries>(`/api/assets/${encodeURIComponent(symbol)}/series`);
+}
+
+export function getCorrelationAnalysis(): Promise<CorrelationAnalysis> {
+  return request<CorrelationAnalysis>("/api/analysis/correlation");
 }
 
 export async function runBacktest(payload: BacktestRequest): Promise<BacktestResponse> {

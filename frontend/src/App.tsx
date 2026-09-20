@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 
-import { getAssets } from "./api/client";
+import { getAssets, getCorrelationAnalysis } from "./api/client";
 import { Header } from "./components/Header";
 import { PriceChart } from "./components/PriceChart";
 import { StrategyLab } from "./components/StrategyLab";
 import { AssetSelector } from "./components/AssetSelector";
+import { CorrelationPanel } from "./components/CorrelationPanel";
+import { HelpDeskChatbot } from "./components/HelpDeskChatbot";
 import { useAssetSeries } from "./hooks/useAssetSeries";
-import type { ThemeMode } from "./types";
+import type { AssetSummary, SeriesPoint, ThemeMode } from "./types";
 
 function percent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
@@ -15,6 +17,29 @@ function percent(value: number): string {
 
 function money(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+}
+
+function downloadMetadata(asset: AssetSummary, latestPoint?: SeriesPoint): void {
+  const metadata = {
+    metadata_version: "1.0",
+    exported_at: new Date().toISOString(),
+    asset,
+    latest_observation: latestPoint ?? null,
+  };
+
+  const blob = new Blob([JSON.stringify(metadata, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const safeSymbol = asset.symbol.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  anchor.href = url;
+  anchor.download = `${safeSymbol || "finshield"}-metadata.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function App() {
@@ -55,6 +80,12 @@ export default function App() {
   const assetsQuery = useQuery({
     queryKey: ["assets"],
     queryFn: getAssets,
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const correlationQuery = useQuery({
+    queryKey: ["correlation-analysis"],
+    queryFn: getCorrelationAnalysis,
     staleTime: 60_000,
     retry: 1,
   });
@@ -145,7 +176,7 @@ export default function App() {
             </p>
           </div>
 
-          <div className="shrink-0 w-full md:w-auto">
+          <div className="shrink-0 w-full md:w-auto flex flex-col gap-3">
             <AssetSelector
               assets={availableAssets}
               value={symbol}
@@ -154,6 +185,19 @@ export default function App() {
               disabled={assetsQuery.isFetching}
               theme={theme}
             />
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={!selectedAsset || seriesQuery.isFetching}
+              onClick={() => {
+                if (selectedAsset) downloadMetadata(selectedAsset, latestPoint);
+              }}
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+                download
+              </span>
+              Download metadata
+            </button>
           </div>
         </section>
 
@@ -241,6 +285,13 @@ export default function App() {
           )}
         </section>
 
+        <CorrelationPanel
+          data={correlationQuery.data}
+          isLoading={correlationQuery.isLoading}
+          isError={correlationQuery.isError}
+          theme={theme}
+        />
+
         {/* Steps 3, 4 & 5: Strategy Lab, Results, Reliability Lab, and Plain-Language Explanation */}
         <StrategyLab
           assets={availableAssets}
@@ -254,6 +305,8 @@ export default function App() {
           For research and educational quantitative analysis. Historical backtest results do not guarantee future performance.
         </footer>
       </main>
+
+      <HelpDeskChatbot />
     </div>
   );
 }

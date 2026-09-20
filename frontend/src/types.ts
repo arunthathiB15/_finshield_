@@ -42,6 +42,25 @@ export type AssetSeries = {
   data: SeriesPoint[];
 };
 
+export type CorrelationPair = {
+  left_symbol: string;
+  right_symbol: string;
+  left_name: string;
+  right_name: string;
+  correlation: number;
+  observations: number;
+  start_date: string;
+  end_date: string;
+};
+
+export type CorrelationAnalysis = {
+  symbols: string[];
+  names: Record<string, string>;
+  matrix: Record<string, Record<string, number>>;
+  pairs: CorrelationPair[];
+  method: string;
+};
+
 export type BacktestRequest = {
   symbol: string;
   strategy: string;

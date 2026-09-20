@@ -42,6 +42,25 @@ class AssetSeries(BaseModel):
     data: list[SeriesPoint]
 
 
+class CorrelationPair(BaseModel):
+    left_symbol: str
+    right_symbol: str
+    left_name: str
+    right_name: str
+    correlation: float = Field(ge=-1, le=1)
+    observations: int = Field(ge=2)
+    start_date: date
+    end_date: date
+
+
+class CorrelationResponse(BaseModel):
+    symbols: list[str] = Field(min_length=2)
+    names: dict[str, str]
+    matrix: dict[str, dict[str, float]]
+    pairs: list[CorrelationPair]
+    method: str
+
+
 class BacktestPeriod(BaseModel):
     start: date | None = None
     end: date | None = None
