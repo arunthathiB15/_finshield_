@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AssetSummary(BaseModel):
@@ -85,6 +85,12 @@ class NewsResponse(BaseModel):
 class BacktestPeriod(BaseModel):
     start: date | None = None
     end: date | None = None
+
+    @model_validator(mode="after")
+    def validate_order(self) -> "BacktestPeriod":
+        if self.start and self.end and self.start > self.end:
+            raise ValueError("period.start must be on or before period.end")
+        return self
 
 
 class BacktestRequest(BaseModel):

@@ -83,8 +83,10 @@ export function StrategyLab({
   const [slowWindow, setSlowWindow] = useState("50");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [formError, setFormError] = useState("");
 
   const isDark = theme === "dark";
+  const selectedAsset = assets.find((asset) => asset.symbol === symbol);
 
   const mutation = useMutation<BacktestResponse, Error, BacktestRequest>({
     mutationFn: runBacktest,
@@ -99,16 +101,54 @@ export function StrategyLab({
     previousSymbol.current = symbol;
     mutation.reset();
     analysisMutation.reset();
+    setStart("");
+    setEnd("");
+    setFormError("");
   }, [symbol]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!symbol) return;
+
+    const capitalValue = Number(capital);
+    const fastValue = Number(fastWindow);
+    const slowValue = Number(slowWindow);
+
+    if (!Number.isFinite(capitalValue) || capitalValue <= 0) {
+      setFormError("Initial capital must be a positive number.");
+      return;
+    }
+    if (!Number.isInteger(fastValue) || fastValue < 2) {
+      setFormError("Fast SMA days must be a whole number of at least 2.");
+      return;
+    }
+    if (!Number.isInteger(slowValue) || slowValue <= fastValue) {
+      setFormError("Slow SMA days must be a whole number greater than Fast SMA days.");
+      return;
+    }
+    if (start && end && start > end) {
+      setFormError("Start date must be on or before the end date.");
+      return;
+    }
+    if (
+      selectedAsset &&
+      ((start &&
+        (start < selectedAsset.start_date || start > selectedAsset.end_date)) ||
+        (end &&
+          (end < selectedAsset.start_date || end > selectedAsset.end_date)))
+    ) {
+      setFormError(
+        `Choose dates between ${selectedAsset.start_date} and ${selectedAsset.end_date} for ${selectedAsset.symbol}.`,
+      );
+      return;
+    }
+
+    setFormError("");
     const payload: BacktestRequest = {
       symbol,
       strategy: "sma_crossover",
-      params: { fast_window: Number(fastWindow), slow_window: Number(slowWindow) },
-      capital: Number(capital),
+      params: { fast_window: fastValue, slow_window: slowValue },
+      capital: capitalValue,
       cost: Number(costBps) / 10_000,
       slippage: Number(slippageBps) / 10_000,
       period: { start: start || null, end: end || null },
@@ -179,9 +219,13 @@ export function StrategyLab({
           <input
             type="number"
             min="1"
-            step="1000"
+            step="any"
+            inputMode="decimal"
             value={capital}
-            onChange={(event) => setCapital(event.target.value)}
+            onChange={(event) => {
+              setCapital(event.target.value);
+              setFormError("");
+            }}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
                 ? "bg-background text-on-surface border border-outline-variant"
@@ -267,7 +311,12 @@ export function StrategyLab({
           <input
             type="date"
             value={start}
-            onChange={(event) => setStart(event.target.value)}
+            min={selectedAsset?.start_date}
+            max={end || selectedAsset?.end_date}
+            onChange={(event) => {
+              setStart(event.target.value);
+              setFormError("");
+            }}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
                 ? "bg-background text-on-surface border border-outline-variant"
@@ -283,7 +332,12 @@ export function StrategyLab({
           <input
             type="date"
             value={end}
-            onChange={(event) => setEnd(event.target.value)}
+            min={start || selectedAsset?.start_date}
+            max={selectedAsset?.end_date}
+            onChange={(event) => {
+              setEnd(event.target.value);
+              setFormError("");
+            }}
             className={`w-full p-2.5 rounded-xl text-sm font-semibold liquid-input ${
               isDark
                 ? "bg-background text-on-surface border border-outline-variant"
@@ -291,6 +345,33 @@ export function StrategyLab({
             }`}
           />
         </div>
+
+        <div className="sm:col-span-2 lg:col-span-3 flex flex-wrap items-center justify-between gap-2 text-[11px] opacity-70">
+          <span>
+            {selectedAsset
+              ? `Available data: ${selectedAsset.start_date} to ${selectedAsset.end_date}. Leave both dates empty to use the full period.`
+              : "Select an asset to see its available date range."}
+          </span>
+          {(start || end) && (
+            <button
+              className="text-xs font-semibold underline underline-offset-2 cursor-pointer"
+              type="button"
+              onClick={() => {
+                setStart("");
+                setEnd("");
+                setFormError("");
+              }}
+            >
+              Clear dates
+            </button>
+          )}
+        </div>
+
+        {formError && (
+          <div className="sm:col-span-2 lg:col-span-3 error-panel" role="alert">
+            {formError}
+          </div>
+        )}
 
         <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-2">
           <button
