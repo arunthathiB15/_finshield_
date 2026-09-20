@@ -13,6 +13,22 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+async function responseError(response: Response, fallback: string): Promise<Error> {
+  const body = await response.text();
+  if (body) {
+    try {
+      const parsed = JSON.parse(body) as { detail?: unknown };
+      if (typeof parsed.detail === "string") {
+        return new Error(parsed.detail);
+      }
+    } catch {
+      // Use the raw response below when the server did not return JSON.
+    }
+    return new Error(body);
+  }
+  return new Error(fallback);
+}
+
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`);
   if (!response.ok) {
@@ -50,8 +66,7 @@ export async function runBacktest(payload: BacktestRequest): Promise<BacktestRes
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Finshield API returned ${response.status}`);
+    throw await responseError(response, `Finshield API returned ${response.status}`);
   }
   return response.json() as Promise<BacktestResponse>;
 }
@@ -63,8 +78,7 @@ export async function runAnalysis(payload: AnalysisRequest): Promise<AnalysisRes
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Finshield API returned ${response.status}`);
+    throw await responseError(response, `Finshield API returned ${response.status}`);
   }
   return response.json() as Promise<AnalysisResponse>;
 }
@@ -76,8 +90,7 @@ export async function explainAnalysis(payload: ExplanationRequest): Promise<Expl
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Finshield API returned ${response.status}`);
+    throw await responseError(response, `Finshield API returned ${response.status}`);
   }
   return response.json() as Promise<ExplanationResponse>;
 }

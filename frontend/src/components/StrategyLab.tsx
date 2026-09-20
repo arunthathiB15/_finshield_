@@ -84,6 +84,7 @@ export function StrategyLab({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [formError, setFormError] = useState("");
+  const [analysisNotice, setAnalysisNotice] = useState("");
 
   const isDark = theme === "dark";
   const selectedAsset = assets.find((asset) => asset.symbol === symbol);
@@ -104,6 +105,7 @@ export function StrategyLab({
     setStart("");
     setEnd("");
     setFormError("");
+    setAnalysisNotice("");
   }, [symbol]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -144,6 +146,7 @@ export function StrategyLab({
     }
 
     setFormError("");
+    setAnalysisNotice("");
     const payload: BacktestRequest = {
       symbol,
       strategy: "sma_crossover",
@@ -155,7 +158,23 @@ export function StrategyLab({
     };
     analysisMutation.reset();
     mutation.mutate(payload, {
-      onSuccess: () => analysisMutation.mutate({ ...payload, train_fraction: 0.7 }),
+      onSuccess: (backtest) => {
+        const selectedRows = backtest.equity_curve.length;
+        const minimumRowsPerSplit = Math.max(slowValue + 2, 20);
+        const trainRows = Math.floor(selectedRows * 0.7);
+        const testRows = selectedRows - trainRows;
+
+        if (trainRows < minimumRowsPerSplit || testRows < minimumRowsPerSplit) {
+          setAnalysisNotice(
+            `Backtest completed with ${selectedRows} available rows, but reliability analysis was skipped. ` +
+              `The ${slowValue}-day SMA and 70/30 train/test check need at least ${minimumRowsPerSplit} rows in both splits. ` +
+              "Choose a longer date range or leave the dates empty to use the full history.",
+          );
+          return;
+        }
+
+        analysisMutation.mutate({ ...payload, train_fraction: 0.7 });
+      },
     });
   }
 
@@ -390,9 +409,15 @@ export function StrategyLab({
           Backtest failed: {mutation.error.message}
         </div>
       )}
+      {analysisNotice && (
+        <div className="warning-panel" role="status">
+          <strong>Backtest completed; reliability analysis needs more data.</strong>
+          <span>{analysisNotice}</span>
+        </div>
+      )}
       {analysisMutation.isError && (
-        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 text-xs">
-          Reliability analysis failed: {analysisMutation.error.message}
+        <div className="error-panel" role="alert">
+          Reliability analysis unavailable: {analysisMutation.error.message}
         </div>
       )}
 

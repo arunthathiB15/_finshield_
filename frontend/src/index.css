@@ -155,6 +155,20 @@ option { color: var(--color-text); background: var(--color-field); }
   background: var(--color-field);
 }
 .error-panel { color: #B77A7B; border-color: var(--color-negative); }
+.warning-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 14px;
+  border: 1px solid var(--color-highlight);
+  border-radius: 10px;
+  color: var(--color-text);
+  background: rgba(157, 135, 80, .12);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.warning-panel strong { color: var(--color-highlight); }
 .error { color: #B77A7B !important; }
 .positive { color: #91A99A !important; }
 .negative { color: #B77A7B !important; }

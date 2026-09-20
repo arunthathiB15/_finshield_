@@ -67,7 +67,14 @@ def run_train_test_validation(
     split_index = int(len(data) * train_fraction)
     minimum_rows = max(slow_window + 2, 20)
     if split_index < minimum_rows or len(data) - split_index < minimum_rows:
-        raise ValueError("Not enough rows for a stable train/test split")
+        raise ValueError(
+            "Not enough rows for a stable train/test split: "
+            f"the selected period has {len(data)} rows "
+            f"({split_index} train, {len(data) - split_index} test), "
+            f"but both splits need at least {minimum_rows} rows for a "
+            f"{slow_window}-day SMA. Choose a longer date range or reduce "
+            "Slow SMA Days."
+        )
 
     train_frame = data.iloc[:split_index].copy()
     split_date = pd.Timestamp(data.iloc[split_index]["date"])
